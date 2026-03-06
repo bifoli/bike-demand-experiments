@@ -20,14 +20,12 @@ pip install -r requirements.txt
 ## 2) Data
 Place the datasets in `data/`:
 
-- UCI Bike Sharing Dataset: `hour.csv`
-- Seoul Bike Sharing Demand: `SeoulBikeData.csv`
+https://archive.ics.uci.edu/dataset/560/seoul+bike+sharing+demand
 
-Alternatively, run:
+https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset
 
 ```bash
-python run_experiments.py --download_data
-```
+python run_experiments.py 
 
 (Downloads from the UCI repository.)
 
