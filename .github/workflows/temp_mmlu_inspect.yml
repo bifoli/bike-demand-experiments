@@ -15,7 +15,6 @@ jobs:
         run: |
           python - <<'PY'
           import base64, hashlib, io, json, os, re, urllib.request, zipfile, zlib
-
           base='https://github.com/TIGER-AI-Lab/MMLU-Pro/raw/refs/heads/main/eval_results/'
           archives={
             'direct_sonnet35':'model_outputs_sonnet-3.5_0shots_09_34_29.zip',
@@ -26,11 +25,9 @@ jobs:
             'cot_flash002':'model_outputs_gemini-1.5-flash-002_5shots.zip',
           }
           ans_pat=re.compile(r'(?:final\s+answer|answer\s+is)\s*[:=]?\s*\(?([A-J])\)?',re.I)
-
           def load_records(url):
             req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'})
-            raw=urllib.request.urlopen(req,timeout=240).read()
-            members=[]; records=[]
+            raw=urllib.request.urlopen(req,timeout=240).read(); members=[]; records=[]
             with zipfile.ZipFile(io.BytesIO(raw)) as z:
               for member in z.namelist():
                 if member.endswith('/'): continue
@@ -45,68 +42,47 @@ jobs:
                     else: records.append(obj)
                 except Exception:
                   for line in text.splitlines():
-                    line=line.strip()
-                    if not line: continue
                     try:
                       x=json.loads(line)
                       if isinstance(x,dict): records.append(x)
                     except Exception: pass
-            return raw, members, records
-
+            return raw,members,records
           def prediction(r):
             for k in ('pred','prediction','predicted_answer'):
               v=r.get(k)
               if isinstance(v,str):
                 v=v.strip().upper().strip('()[]{}.:, ')
-                if len(v)==1 and v in 'ABCDEFGHIJ': return v, True
+                if len(v)==1 and v in 'ABCDEFGHIJ': return v,True
             for k in ('model_outputs','rationale','solution','output','response'):
               v=r.get(k)
               if isinstance(v,str):
                 ms=list(ans_pat.finditer(v))
-                if ms: return ms[-1].group(1).upper(), True
-            return '?', False
-
+                if ms: return ms[-1].group(1).upper(),True
+            return '?',False
           by_model={}; manifest={'archives':{},'model_order':list(archives)}; canonical={}
           for name,fn in archives.items():
-            raw,members,records=load_records(base+fn)
-            d={}; extracted=0
+            raw,members,records=load_records(base+fn); d={}; extracted=0
             for r in records:
               try: qid=int(r['question_id'])
               except Exception: continue
-              p,ok=prediction(r); extracted+=int(ok)
-              d[qid]=p
+              p,ok=prediction(r); extracted+=int(ok); d[qid]=p
               if qid not in canonical and all(k in r for k in ('question','answer','category')):
                 canonical[qid]={'question':str(r['question']),'answer':str(r['answer']),'category':str(r['category'])}
             by_model[name]=d
             correct=sum(1 for r in records if str(r.get('pred','?')).upper()==str(r.get('answer','!')).upper())
-            manifest['archives'][name]={
-              'filename':fn,'zip_bytes':len(raw),'zip_sha256':hashlib.sha256(raw).hexdigest(),
-              'members':members,'record_count':len(records),'unique_qids':len(d),
-              'extracted_predictions':extracted,'embedded_pred_accuracy':correct/max(1,len(records))
-            }
-
+            manifest['archives'][name]={'filename':fn,'zip_bytes':len(raw),'zip_sha256':hashlib.sha256(raw).hexdigest(),'members':members,'record_count':len(records),'unique_qids':len(d),'extracted_predictions':extracted,'embedded_pred_accuracy':correct/max(1,len(records))}
           qids=sorted(set().union(*(set(d) for d in by_model.values())))
-          manifest['qid_min']=min(qids); manifest['qid_max']=max(qids); manifest['qid_count']=len(qids)
+          manifest.update(qid_min=min(qids),qid_max=max(qids),qid_count=len(qids))
+          manifest['qid_sha256']=hashlib.sha256(','.join(map(str,qids)).encode()).hexdigest()
           manifest['missing_by_model']={m:len(qids)-len(d) for m,d in by_model.items()}
-          canon_rows=[]
-          for qid in qids:
-            c=canonical.get(qid,{})
-            canon_rows.append(f"{qid}\t{c.get('question','')}\t{c.get('answer','')}\t{c.get('category','')}")
+          canon_rows=[f"{q}\t{canonical.get(q,{}).get('question','')}\t{canonical.get(q,{}).get('answer','')}\t{canonical.get(q,{}).get('category','')}" for q in qids]
           manifest['canonical_sha256']=hashlib.sha256(('\n'.join(canon_rows)).encode()).hexdigest()
-          payload={
-            'format':'mmlu-pro-prediction-bundle-v1',
-            'qids':qids,
-            'model_order':list(archives),
-            'predictions':{m:''.join(by_model[m].get(q,'?') for q in qids) for m in archives},
-            'canonical_answer':''.join(canonical.get(q,{}).get('answer','?') for q in qids),
-            'canonical_category':[canonical.get(q,{}).get('category','') for q in qids],
-            'canonical_sha256':manifest['canonical_sha256'],
-          }
-          packed=zlib.compress(json.dumps(payload,separators=(',',':'),ensure_ascii=False).encode(),9)
-          b64=base64.b64encode(packed).decode()
-          os.makedirs('temp_mmlu_outputs',exist_ok=True)
-          with open('temp_mmlu_outputs/prediction_bundle.b64.txt','w') as f:
-            for i in range(0,len(b64),4000): f.write(b64[i:i+4000]+'\n')
+          os.makedirs('temp_mmlu_outputs/models',exist_ok=True)
+          for name,d in by_model.items():
+            s=''.join(d.get(q,'?') for q in qids)
+            enc=base64.b64encode(zlib.compress(s.encode(),9)).decode()
+            open(f'temp_mmlu_outputs/models/{name}.b64.txt','w').write(enc+'\n')
+          open('temp_mmlu_outputs/qids.txt','w').write(','.join(map(str,qids))+'\n')
           with open('temp_mmlu_outputs/manifest.json','w') as f: json.dump(manifest,f,indent=2)
           print(json.dumps(manifest,indent=2))
           PY
@@ -114,6 +90,6 @@ jobs:
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add temp_mmlu_outputs/prediction_bundle.b64.txt temp_mmlu_outputs/manifest.json
-          git commit -m 'Add compact MMLU-Pro prediction bundle [skip ci]' || exit 0
+          git add temp_mmlu_outputs/models temp_mmlu_outputs/qids.txt temp_mmlu_outputs/manifest.json
+          git commit -m 'Add per-model MMLU-Pro prediction strings [skip ci]' || exit 0
           git push origin temp-mmlu-pro-unpack-20260622
