@@ -1,22 +1,33 @@
-name: temp-mmlu-inspect
+name: temp-mmlu-analysis
 on:
   push:
     branches: [temp-mmlu-pro-unpack-20260622]
 permissions:
   contents: write
 jobs:
-  inspect:
+  analyze:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: temp-mmlu-pro-unpack-20260622
-      - name: Build compact MMLU-Pro prediction bundle
+      - name: Install analysis dependencies
+        run: python -m pip install -q numpy pandas scipy scikit-learn
+      - name: Run full MMLU-Pro calibration and selective-answering analysis
         run: |
-          python - <<'PY'
-          import base64, hashlib, io, json, os, re, urllib.request, zipfile, zlib
-          base='https://github.com/TIGER-AI-Lab/MMLU-Pro/raw/refs/heads/main/eval_results/'
-          archives={
+          cat > /tmp/analyze.py <<'PY'
+          import io, json, math, os, re, hashlib, urllib.request, zipfile
+          import numpy as np
+          import pandas as pd
+          from scipy.optimize import minimize_scalar
+          from scipy.stats import binomtest
+          from sklearn.model_selection import StratifiedKFold
+          from sklearn.metrics import roc_auc_score
+
+          SEED=42
+          ALPHA=0.05
+          BASE='https://github.com/TIGER-AI-Lab/MMLU-Pro/raw/refs/heads/main/eval_results/'
+          ARCHIVES={
             'direct_sonnet35':'model_outputs_sonnet-3.5_0shots_09_34_29.zip',
             'direct_sonnet':'model_outputs_sonnet_0shots_12_01_18.zip',
             'direct_flash':'model_outputs_flash_0shots_00_35_03.zip',
@@ -24,73 +35,334 @@ jobs:
             'cot_sonnet35_20241022':'model_outputs_claude-3-5-sonnet-20241022_5shots.json.zip',
             'cot_flash002':'model_outputs_gemini-1.5-flash-002_5shots.zip',
           }
+          CONDITIONS={
+            'direct': ['direct_sonnet35','direct_flash','direct_sonnet'],
+            'cot': ['cot_sonnet35_20241022','cot_sonnet35','cot_flash002'],
+          }
+          ANSWERS='ABCDEFGHIJ'
           ans_pat=re.compile(r'(?:final\s+answer|answer\s+is)\s*[:=]?\s*\(?([A-J])\)?',re.I)
-          def load_records(url):
-            req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'})
-            raw=urllib.request.urlopen(req,timeout=240).read(); members=[]; records=[]
-            with zipfile.ZipFile(io.BytesIO(raw)) as z:
-              for member in z.namelist():
-                if member.endswith('/'): continue
-                b=z.read(member); members.append({'name':member,'bytes':len(b)})
-                if not member.lower().endswith(('.json','.jsonl')): continue
-                text=b.decode('utf-8',errors='replace')
-                try:
-                  obj=json.loads(text)
-                  if isinstance(obj,list): records.extend(x for x in obj if isinstance(x,dict))
-                  elif isinstance(obj,dict):
-                    if isinstance(obj.get('data'),list): records.extend(x for x in obj['data'] if isinstance(x,dict))
-                    else: records.append(obj)
-                except Exception:
-                  for line in text.splitlines():
-                    try:
-                      x=json.loads(line)
-                      if isinstance(x,dict): records.append(x)
-                    except Exception: pass
-            return raw,members,records
-          def prediction(r):
-            for k in ('pred','prediction','predicted_answer'):
-              v=r.get(k)
-              if isinstance(v,str):
-                v=v.strip().upper().strip('()[]{}.:, ')
-                if len(v)==1 and v in 'ABCDEFGHIJ': return v,True
-            for k in ('model_outputs','rationale','solution','output','response'):
-              v=r.get(k)
-              if isinstance(v,str):
-                ms=list(ans_pat.finditer(v))
-                if ms: return ms[-1].group(1).upper(),True
-            return '?',False
-          by_model={}; manifest={'archives':{},'model_order':list(archives)}; canonical={}
-          for name,fn in archives.items():
-            raw,members,records=load_records(base+fn); d={}; extracted=0
-            for r in records:
-              try: qid=int(r['question_id'])
-              except Exception: continue
-              p,ok=prediction(r); extracted+=int(ok); d[qid]=p
-              if qid not in canonical and all(k in r for k in ('question','answer','category')):
-                canonical[qid]={'question':str(r['question']),'answer':str(r['answer']),'category':str(r['category'])}
-            by_model[name]=d
-            correct=sum(1 for r in records if str(r.get('pred','?')).upper()==str(r.get('answer','!')).upper())
-            manifest['archives'][name]={'filename':fn,'zip_bytes':len(raw),'zip_sha256':hashlib.sha256(raw).hexdigest(),'members':members,'record_count':len(records),'unique_qids':len(d),'extracted_predictions':extracted,'embedded_pred_accuracy':correct/max(1,len(records))}
-          qids=sorted(set().union(*(set(d) for d in by_model.values())))
-          manifest.update(qid_min=min(qids),qid_max=max(qids),qid_count=len(qids))
-          manifest['qid_sha256']=hashlib.sha256(','.join(map(str,qids)).encode()).hexdigest()
-          manifest['missing_by_model']={m:len(qids)-len(d) for m,d in by_model.items()}
-          canon_rows=[f"{q}\t{canonical.get(q,{}).get('question','')}\t{canonical.get(q,{}).get('answer','')}\t{canonical.get(q,{}).get('category','')}" for q in qids]
-          manifest['canonical_sha256']=hashlib.sha256(('\n'.join(canon_rows)).encode()).hexdigest()
-          os.makedirs('temp_mmlu_outputs/models',exist_ok=True)
-          for name,d in by_model.items():
-            s=''.join(d.get(q,'?') for q in qids)
-            enc=base64.b64encode(zlib.compress(s.encode(),9)).decode()
-            with open(f'temp_mmlu_outputs/models/{name}.b64.txt','w') as f:
-              for i in range(0,len(enc),3000): f.write(enc[i:i+3000]+'\n')
-          open('temp_mmlu_outputs/qids.txt','w').write(','.join(map(str,qids))+'\n')
-          with open('temp_mmlu_outputs/manifest.json','w') as f: json.dump(manifest,f,indent=2)
-          print(json.dumps(manifest,indent=2))
+
+          def download_records(filename):
+              req=urllib.request.Request(BASE+filename,headers={'User-Agent':'Mozilla/5.0'})
+              raw=urllib.request.urlopen(req,timeout=240).read()
+              rec=[]; members=[]
+              with zipfile.ZipFile(io.BytesIO(raw)) as z:
+                  for name in z.namelist():
+                      if name.endswith('/'): continue
+                      b=z.read(name); members.append({'name':name,'bytes':len(b)})
+                      if not name.lower().endswith(('.json','.jsonl')): continue
+                      text=b.decode('utf-8',errors='replace')
+                      try:
+                          obj=json.loads(text)
+                          if isinstance(obj,list): rec.extend(x for x in obj if isinstance(x,dict))
+                          elif isinstance(obj,dict):
+                              if isinstance(obj.get('data'),list): rec.extend(x for x in obj['data'] if isinstance(x,dict))
+                              else: rec.append(obj)
+                      except Exception:
+                          for line in text.splitlines():
+                              try:
+                                  x=json.loads(line)
+                                  if isinstance(x,dict): rec.append(x)
+                              except Exception: pass
+              return raw,members,rec
+
+          def get_pred(r):
+              for key in ('pred','prediction','predicted_answer'):
+                  v=r.get(key)
+                  if isinstance(v,str):
+                      v=v.strip().upper().strip('()[]{}.:, ')
+                      if len(v)==1 and v in ANSWERS: return ANSWERS.index(v)
+              for key in ('model_outputs','rationale','solution','output','response'):
+                  v=r.get(key)
+                  if isinstance(v,str):
+                      m=list(ans_pat.finditer(v))
+                      if m: return ANSWERS.index(m[-1].group(1).upper())
+              return -1
+
+          raw_meta={}; records={}; pred_maps={}
+          for key,fn in ARCHIVES.items():
+              raw,members,rec=download_records(fn)
+              d={}
+              for r in rec:
+                  try: d[int(r['question_id'])]=get_pred(r)
+                  except Exception: pass
+              records[key]=rec; pred_maps[key]=d
+              raw_meta[key]={'filename':fn,'zip_bytes':len(raw),'zip_sha256':hashlib.sha256(raw).hexdigest(),
+                             'members':members,'records':len(rec),'unique_qids':len(d),
+                             'valid_predictions':sum(v>=0 for v in d.values())}
+
+          canon_map={int(r['question_id']):r for r in records['direct_sonnet35']}
+          qids=np.array(sorted(canon_map),dtype=int)
+          n=len(qids)
+          canon=[canon_map[int(q)] for q in qids]
+          y=np.array([ANSWERS.index(str(r['answer']).upper()) for r in canon],dtype=int)
+          cats=np.array([str(r['category']) for r in canon],dtype=object)
+          options=[list(r['options']) for r in canon]
+          k=np.array([len(x) for x in options],dtype=int)
+          qlen=np.array([len(str(r['question'])) for r in canon],dtype=int)
+          src=np.array([str(r.get('src','')) for r in canon],dtype=object)
+          cat_names=sorted(set(cats.tolist()))
+          qid_hash=hashlib.sha256(','.join(map(str,qids.tolist())).encode()).hexdigest()
+          label_rows='\n'.join(f'{int(q)}\t{ANSWERS[int(yi)]}\t{c}' for q,yi,c in zip(qids,y,cats))
+          label_hash=hashlib.sha256(label_rows.encode()).hexdigest()
+          question_rows='\n'.join(f"{int(q)}\t{r['question']}\t{r['answer']}\t{r['category']}" for q,r in zip(qids,canon))
+          question_hash=hashlib.sha256(question_rows.encode()).hexdigest()
+
+          model_pred={}
+          for name,d in pred_maps.items():
+              arr=np.array([d.get(int(q),-1) for q in qids],dtype=int)
+              arr[(arr<0)|(arr>=k)]=-1
+              model_pred[name]=arr
+              valid=arr>=0
+              raw_meta[name]['aligned_valid']=int(valid.sum())
+              raw_meta[name]['full_set_accuracy']=float(np.mean(arr==y))
+              raw_meta[name]['answered_accuracy']=float(np.mean(arr[valid]==y[valid])) if valid.any() else None
+              raw_meta[name]['coverage']=float(valid.mean())
+
+          def ensemble(names):
+              P=np.zeros((n,10),dtype=float); yhat=np.zeros(n,dtype=int); valid_counts=np.zeros(n,dtype=int)
+              votes=np.stack([model_pred[m] for m in names],axis=1)
+              for i in range(n):
+                  vv=votes[i]; vv=vv[(vv>=0)&(vv<k[i])]
+                  valid_counts[i]=len(vv)
+                  cnt=np.bincount(vv,minlength=int(k[i])).astype(float)
+                  P[i,:k[i]]=(cnt+ALPHA)/(len(vv)+ALPHA*k[i]) if len(vv) else 1.0/k[i]
+                  mx=P[i,:k[i]].max(); candidates=set(np.flatnonzero(np.isclose(P[i,:k[i]],mx)).tolist())
+                  choice=None
+                  for m in names:
+                      p=int(model_pred[m][i])
+                      if p in candidates: choice=p; break
+                  yhat[i]=min(candidates) if choice is None else choice
+              return P,yhat,votes,valid_counts
+
+          def apply_temp(P,T):
+              X=np.full_like(P,-1e30,dtype=float)
+              mask=P>0
+              X[mask]=np.log(P[mask])/float(T)
+              X-=X.max(axis=1,keepdims=True)
+              E=np.exp(X); E[~mask]=0
+              return E/E.sum(axis=1,keepdims=True)
+
+          def fit_temp(P,yy,idx):
+              idx=np.asarray(idx,dtype=int)
+              def obj(logT):
+                  T=float(np.exp(logT))
+                  Q=apply_temp(P[idx],T)
+                  return float(-np.log(np.clip(Q[np.arange(len(idx)),yy[idx]],1e-15,1)).mean())
+              res=minimize_scalar(obj,bounds=(math.log(0.05),math.log(20.0)),method='bounded',options={'xatol':1e-7})
+              return float(np.exp(res.x))
+
+          def crossfit(P):
+              Pg=np.zeros_like(P); Pc=np.zeros_like(P); fold_T=[]; cat_T={c:[] for c in cat_names}
+              skf=StratifiedKFold(n_splits=5,shuffle=True,random_state=SEED)
+              for fold,(tr,te) in enumerate(skf.split(np.zeros(n),cats)):
+                  T=fit_temp(P,y,tr); Pg[te]=apply_temp(P[te],T); fold_T.append(T)
+                  for c in cat_names:
+                      trc=tr[cats[tr]==c]; tec=te[cats[te]==c]
+                      Tc=fit_temp(P,y,trc) if len(trc)>=20 else T
+                      Pc[tec]=apply_temp(P[tec],Tc); cat_T[c].append(Tc)
+              return Pg,Pc,fold_T,cat_T
+
+          def ece(P,yy,yhat,bins=15,adaptive=False,idx=None):
+              if idx is None: idx=np.arange(len(yy))
+              idx=np.asarray(idx,dtype=int); conf=P[idx,yhat[idx]]; corr=(yhat[idx]==yy[idx]).astype(float)
+              if len(idx)==0: return None
+              gaps=[]; weights=[]
+              if adaptive:
+                  order=np.argsort(conf,kind='mergesort'); groups=np.array_split(order,bins)
+                  for g in groups:
+                      if len(g): gaps.append(abs(conf[g].mean()-corr[g].mean())); weights.append(len(g)/len(idx))
+              else:
+                  edges=np.linspace(0,1,bins+1)
+                  for b in range(bins):
+                      m=(conf>=edges[b]) & ((conf<edges[b+1]) if b<bins-1 else (conf<=edges[b+1]))
+                      if m.any(): gaps.append(abs(conf[m].mean()-corr[m].mean())); weights.append(m.mean())
+              return float(np.dot(gaps,weights)) if gaps else 0.0
+
+          def aurc(P,yy,yhat,idx=None):
+              if idx is None: idx=np.arange(len(yy))
+              idx=np.asarray(idx,dtype=int); conf=P[idx,yhat[idx]]; err=(yhat[idx]!=yy[idx]).astype(float)
+              order=np.argsort(-conf,kind='mergesort'); risk=np.cumsum(err[order])/np.arange(1,len(order)+1)
+              return float(risk.mean())
+
+          def metrics(P,yy,yhat,idx=None):
+              if idx is None: idx=np.arange(len(yy))
+              idx=np.asarray(idx,dtype=int); conf=P[idx,yhat[idx]]; corr=(yhat[idx]==yy[idx]); err=~corr
+              one=np.zeros((len(idx),10)); one[np.arange(len(idx)),yy[idx]]=1
+              nll=-np.log(np.clip(P[idx,yy[idx]],1e-15,1)).mean()
+              br=np.sum((P[idx]-one)**2,axis=1).mean()
+              auroc=roc_auc_score(err.astype(int),1-conf) if err.any() and corr.any() else None
+              catacc=[np.mean(yhat[idx[cats[idx]==c]]==yy[idx[cats[idx]==c]]) for c in cat_names if np.any(cats[idx]==c)]
+              return {'n':int(len(idx)),'accuracy':float(corr.mean()),'macro_category_accuracy':float(np.mean(catacc)),
+                      'nll':float(nll),'brier':float(br),'ece15':ece(P,yy,yhat,15,False,idx),
+                      'adaptive_ece15':ece(P,yy,yhat,15,True,idx),'aurc':aurc(P,yy,yhat,idx),
+                      'error_detection_auroc':None if auroc is None else float(auroc),
+                      'mean_confidence':float(conf.mean())}
+
+          def reliability(P,yy,yhat,idx=None,bins=10):
+              if idx is None: idx=np.arange(len(yy))
+              idx=np.asarray(idx,dtype=int); conf=P[idx,yhat[idx]]; corr=(yhat[idx]==yy[idx]).astype(float)
+              edges=np.linspace(0,1,bins+1); out=[]
+              for b in range(bins):
+                  m=(conf>=edges[b]) & ((conf<edges[b+1]) if b<bins-1 else (conf<=edges[b+1]))
+                  out.append({'lower':float(edges[b]),'upper':float(edges[b+1]),'count':int(m.sum()),
+                              'mean_confidence':float(conf[m].mean()) if m.any() else None,
+                              'accuracy':float(corr[m].mean()) if m.any() else None})
+              return out
+
+          def selective(P,yy,yhat,coverages):
+              conf=P[np.arange(len(yy)),yhat]; order=np.argsort(-conf,kind='mergesort'); out=[]
+              for cov in coverages:
+                  m=max(1,int(round(cov*len(yy)))); sel=order[:m]
+                  out.append({'target_coverage':float(cov),'n_answered':int(m),'coverage':float(m/len(yy)),
+                              'risk':float(np.mean(yhat[sel]!=yy[sel])),'accuracy':float(np.mean(yhat[sel]==yy[sel])),
+                              'confidence_cutoff':float(conf[sel].min())})
+              return out
+
+          def risk_tiers(P,yy,yhat):
+              conf=P[np.arange(len(yy)),yhat]
+              defs=[('low',conf>=0.80),('moderate',(conf>=0.60)&(conf<0.80)),('high',conf<0.60)]
+              out=[]
+              for name,m in defs:
+                  out.append({'tier':name,'n':int(m.sum()),'share':float(m.mean()),
+                              'mean_confidence':float(conf[m].mean()) if m.any() else None,
+                              'accuracy':float(np.mean(yhat[m]==yy[m])) if m.any() else None,
+                              'risk':float(np.mean(yhat[m]!=yy[m])) if m.any() else None})
+              return out
+
+          cond={}
+          for name,names in CONDITIONS.items():
+              P,yhat,votes,valid_counts=ensemble(names)
+              Pg,Pc,foldT,catT=crossfit(P)
+              cond[name]={'P_raw':P,'P_global':Pg,'P_category':Pc,'yhat':yhat,'votes':votes,
+                          'valid_counts':valid_counts,'fold_temperatures':foldT,'category_temperatures':catT}
+
+          overall={}; ablation={}; selective_out={}; tiers={}
+          for name,c in cond.items():
+              overall[name]={'raw':metrics(c['P_raw'],y,c['yhat']),
+                             'global_temperature':metrics(c['P_global'],y,c['yhat']),
+                             'category_temperature':metrics(c['P_category'],y,c['yhat']),
+                             'fold_temperatures':c['fold_temperatures'],
+                             'mean_temperature':float(np.mean(c['fold_temperatures']))}
+              ablation[name]=[
+                {'method':'raw',**overall[name]['raw']},
+                {'method':'global_temperature',**overall[name]['global_temperature']},
+                {'method':'category_temperature',**overall[name]['category_temperature']}]
+              selective_out[name]=selective(c['P_global'],y,c['yhat'],[1.0,0.95,0.90,0.80,0.70,0.50])
+              tiers[name]=risk_tiers(c['P_global'],y,c['yhat'])
+
+          category=[]
+          for ca in cat_names:
+              idx=np.flatnonzero(cats==ca); row={'category':ca,'n':int(len(idx))}
+              for name,c in cond.items():
+                  mm=metrics(c['P_global'],y,c['yhat'],idx)
+                  row[name]={'accuracy':mm['accuracy'],'ece15':mm['ece15'],'brier':mm['brier'],'nll':mm['nll'],
+                             'mean_confidence':mm['mean_confidence'],'aurc':mm['aurc']}
+              row['accuracy_delta_cot_minus_direct']=row['cot']['accuracy']-row['direct']['accuracy']
+              category.append(row)
+
+          domain_defs={'finance':['business','economics'],'medicine':['health'],'law':['law'],'engineering':['engineering']}
+          domains=[]; rel={'overall':{},'domains':{}}
+          for name,c in cond.items(): rel['overall'][name]=reliability(c['P_global'],y,c['yhat'])
+          for dom,clist in domain_defs.items():
+              idx=np.flatnonzero(np.isin(cats,clist)); row={'domain':dom,'categories':clist,'n':int(len(idx))}
+              rel['domains'][dom]={}
+              for name,c in cond.items():
+                  row[name]=metrics(c['P_global'],y,c['yhat'],idx)
+                  rel['domains'][dom][name]=reliability(c['P_global'],y,c['yhat'],idx)
+              domains.append(row)
+
+          # Risk-coverage points for figures.
+          risk_curves={}
+          curve_cov=[round(x,2) for x in np.linspace(0.05,1.0,20)]
+          for name,c in cond.items(): risk_curves[name]=selective(c['P_global'],y,c['yhat'],curve_cov)
+
+          # Ensemble disagreement failure taxonomy.
+          failure={}
+          for name,c in cond.items():
+              labels=['unanimous_correct','unanimous_wrong','majority_correct','majority_wrong',
+                      'three_way_correct','three_way_wrong','incomplete']
+              counts={x:0 for x in labels}; errs={x:0 for x in labels}
+              for i,v in enumerate(c['votes']):
+                  vv=v[(v>=0)&(v<k[i])]
+                  if len(vv)<3: lab='incomplete'
+                  else:
+                      u,cnt=np.unique(vv,return_counts=True); mx=cnt.max(); correct=c['yhat'][i]==y[i]
+                      if mx==3: lab='unanimous_correct' if correct else 'unanimous_wrong'
+                      elif mx==2: lab='majority_correct' if correct else 'majority_wrong'
+                      else: lab='three_way_correct' if correct else 'three_way_wrong'
+                  counts[lab]+=1; errs[lab]+=int(c['yhat'][i]!=y[i])
+              failure[name]=[{'mode':lab,'n':counts[lab],'share':counts[lab]/n,
+                              'error_rate':errs[lab]/counts[lab] if counts[lab] else None} for lab in labels]
+          dc=cond['direct']['yhat']==y; cc=cond['cot']['yhat']==y
+          transitions=[
+              {'transition':'both_correct','n':int(np.sum(dc&cc)),'share':float(np.mean(dc&cc))},
+              {'transition':'direct_only','n':int(np.sum(dc&~cc)),'share':float(np.mean(dc&~cc))},
+              {'transition':'cot_only','n':int(np.sum(~dc&cc)),'share':float(np.mean(~dc&cc))},
+              {'transition':'both_wrong','n':int(np.sum(~dc&~cc)),'share':float(np.mean(~dc&~cc))},
+          ]
+
+          # Difficulty/format slices from the same canonical item records.
+          attributes={'option_count':[],'question_length_quartile':[],'source_family':[]}
+          option_groups=[('3-5',k<=5),('6-9',(k>=6)&(k<=9)),('10',k==10)]
+          for label,m in option_groups:
+              idx=np.flatnonzero(m); row={'group':label,'n':int(len(idx))}
+              for name,c in cond.items(): row[name]=metrics(c['P_global'],y,c['yhat'],idx)
+              attributes['option_count'].append(row)
+          qbins=pd.qcut(pd.Series(qlen),4,labels=['Q1_shortest','Q2','Q3','Q4_longest'],duplicates='drop')
+          for label in qbins.cat.categories:
+              idx=np.flatnonzero(np.asarray(qbins.astype(str)==str(label))); row={'group':str(label),'n':int(len(idx)),
+                    'min_chars':int(qlen[idx].min()),'max_chars':int(qlen[idx].max())}
+              for name,c in cond.items(): row[name]=metrics(c['P_global'],y,c['yhat'],idx)
+              attributes['question_length_quartile'].append(row)
+          source_family=np.where(np.char.startswith(src.astype(str),'ori_mmlu'),'original_mmlu','other_sources')
+          for label in sorted(set(source_family.tolist())):
+              idx=np.flatnonzero(source_family==label); row={'group':label,'n':int(len(idx))}
+              for name,c in cond.items(): row[name]=metrics(c['P_global'],y,c['yhat'],idx)
+              attributes['source_family'].append(row)
+
+          # Paired inference tests.
+          b=int(np.sum(dc&~cc)); ccount=int(np.sum(~dc&cc)); mcnemar_p=float(binomtest(min(b,ccount),b+ccount,0.5).pvalue) if b+ccount else 1.0
+          rng=np.random.default_rng(SEED); groups=[np.flatnonzero(cats==ca) for ca in cat_names]
+          boot={'accuracy_delta':[],'ece_delta':[],'brier_delta':[],'nll_delta':[]}
+          Pd=cond['direct']['P_global']; Pc=cond['cot']['P_global']; yd=cond['direct']['yhat']; yc=cond['cot']['yhat']
+          for _ in range(2000):
+              idx=np.concatenate([rng.choice(g,size=len(g),replace=True) for g in groups])
+              boot['accuracy_delta'].append(float(np.mean(yc[idx]==y[idx])-np.mean(yd[idx]==y[idx])))
+              boot['ece_delta'].append(float(ece(Pc,y,yc,15,False,idx)-ece(Pd,y,yd,15,False,idx)))
+              one=np.zeros((len(idx),10)); one[np.arange(len(idx)),y[idx]]=1
+              boot['brier_delta'].append(float(np.mean(np.sum((Pc[idx]-one)**2,axis=1))-np.mean(np.sum((Pd[idx]-one)**2,axis=1))))
+              boot['nll_delta'].append(float(np.mean(-np.log(np.clip(Pc[idx,y[idx]],1e-15,1)))-np.mean(-np.log(np.clip(Pd[idx,y[idx]],1e-15,1)))))
+          significance={'mcnemar':{'direct_correct_cot_wrong':b,'direct_wrong_cot_correct':ccount,'exact_p':mcnemar_p},'bootstrap':{}}
+          for key,vals in boot.items():
+              a=np.asarray(vals); significance['bootstrap'][key]={'estimate':float(np.mean(a)),
+                  'ci95':[float(np.quantile(a,0.025)),float(np.quantile(a,0.975))],
+                  'probability_gt_zero':float(np.mean(a>0))}
+
+          dataset={'n':n,'qid_min':int(qids.min()),'qid_max':int(qids.max()),'qid_sha256':qid_hash,
+                   'label_sha256':label_hash,'question_label_category_sha256':question_hash,
+                   'category_counts':{ca:int(np.sum(cats==ca)) for ca in cat_names},
+                   'answer_counts':{ANSWERS[i]:int(np.sum(y==i)) for i in range(10)},
+                   'option_count_distribution':{str(v):int(np.sum(k==v)) for v in sorted(set(k.tolist()))},
+                   'question_length_chars':{'mean':float(qlen.mean()),'sd':float(qlen.std(ddof=1)),
+                                            'median':float(np.median(qlen)),'min':int(qlen.min()),'max':int(qlen.max())}}
+          core={'seed':SEED,'dirichlet_alpha_per_option':ALPHA,'conditions':CONDITIONS,'dataset':dataset,
+                'model_runs':raw_meta,'overall':overall,'selective':selective_out,'risk_tiers':tiers,
+                'transitions':transitions,'significance':significance}
+
+          outdir='temp_mmlu_analysis'; os.makedirs(outdir,exist_ok=True)
+          files={'core.json':core,'category.json':category,'domains.json':domains,'reliability.json':rel,
+                 'risk_curves.json':risk_curves,'failure.json':failure,'attributes.json':attributes,
+                 'calibration_ablation.json':ablation}
+          for fn,obj in files.items():
+              with open(os.path.join(outdir,fn),'w') as f: json.dump(obj,f,indent=2,sort_keys=False)
+          print(json.dumps({'dataset':dataset,'overall':overall,'transitions':transitions,'significance':significance},indent=2))
           PY
-      - name: Commit compact bundle
+          python /tmp/analyze.py
+      - name: Commit analysis results
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add temp_mmlu_outputs/models temp_mmlu_outputs/qids.txt temp_mmlu_outputs/manifest.json
-          git commit -m 'Wrap per-model MMLU-Pro prediction strings [skip ci]' || exit 0
+          git add temp_mmlu_analysis
+          git commit -m 'Add full MMLU-Pro calibration analysis [skip ci]' || exit 0
           git push origin temp-mmlu-pro-unpack-20260622
