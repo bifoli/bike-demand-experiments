@@ -4,137 +4,137 @@
       "target_coverage": 0.05,
       "n_answered": 602,
       "coverage": 0.05003324468085106,
-      "accuracy": 0.8471760797342193,
-      "risk": 0.15282392026578073,
-      "confidence_cutoff": 0.8273559236241356
+      "accuracy": 0.9003322259136213,
+      "risk": 0.09966777408637874,
+      "confidence_cutoff": 0.9156446557146712
     },
     {
       "target_coverage": 0.1,
       "n_answered": 1203,
       "coverage": 0.09998337765957446,
-      "accuracy": 0.8470490440565254,
-      "risk": 0.15295095594347466,
-      "confidence_cutoff": 0.7894565640856697
+      "accuracy": 0.9085619285120532,
+      "risk": 0.0914380714879468,
+      "confidence_cutoff": 0.8636721323900478
     },
     {
       "target_coverage": 0.15,
       "n_answered": 1805,
       "coverage": 0.15001662234042554,
-      "accuracy": 0.8421052631578947,
-      "risk": 0.15789473684210525,
-      "confidence_cutoff": 0.7894565640856697
+      "accuracy": 0.9119113573407203,
+      "risk": 0.08808864265927978,
+      "confidence_cutoff": 0.8551096887026314
     },
     {
       "target_coverage": 0.2,
       "n_answered": 2406,
       "coverage": 0.19996675531914893,
-      "accuracy": 0.8458021612635079,
-      "risk": 0.1541978387364921,
-      "confidence_cutoff": 0.7884634809322371
+      "accuracy": 0.9123025768911056,
+      "risk": 0.08769742310889443,
+      "confidence_cutoff": 0.8481974912928403
     },
     {
       "target_coverage": 0.25,
       "n_answered": 3008,
       "coverage": 0.25,
-      "accuracy": 0.851063829787234,
-      "risk": 0.14893617021276595,
-      "confidence_cutoff": 0.78629929541734
+      "accuracy": 0.9065824468085106,
+      "risk": 0.09341755319148937,
+      "confidence_cutoff": 0.843901465861226
     },
     {
       "target_coverage": 0.3,
       "n_answered": 3610,
       "coverage": 0.3000332446808511,
-      "accuracy": 0.8509695290858725,
-      "risk": 0.1490304709141274,
-      "confidence_cutoff": 0.78629929541734
+      "accuracy": 0.9013850415512465,
+      "risk": 0.09861495844875347,
+      "confidence_cutoff": 0.8309509261683908
     },
     {
       "target_coverage": 0.35,
       "n_answered": 4211,
       "coverage": 0.3499833776595745,
-      "accuracy": 0.8534789836143434,
-      "risk": 0.14652101638565662,
-      "confidence_cutoff": 0.7862583870330262
+      "accuracy": 0.9019235336024697,
+      "risk": 0.09807646639753027,
+      "confidence_cutoff": 0.80531949580216
     },
     {
       "target_coverage": 0.39999999999999997,
       "n_answered": 4813,
       "coverage": 0.4000166223404255,
-      "accuracy": 0.854976106378558,
-      "risk": 0.14502389362144194,
-      "confidence_cutoff": 0.7853570883300144
+      "accuracy": 0.8927903594431748,
+      "risk": 0.10720964055682526,
+      "confidence_cutoff": 0.6930947312451121
     },
     {
       "target_coverage": 0.44999999999999996,
       "n_answered": 5414,
       "coverage": 0.4499667553191489,
-      "accuracy": 0.8533431843369044,
-      "risk": 0.14665681566309569,
-      "confidence_cutoff": 0.7853570883300143
+      "accuracy": 0.8732914665681566,
+      "risk": 0.12670853343184338,
+      "confidence_cutoff": 0.6654603781029894
     },
     {
       "target_coverage": 0.49999999999999994,
       "n_answered": 6016,
       "coverage": 0.5,
-      "accuracy": 0.8532247340425532,
-      "risk": 0.1467752659574468,
-      "confidence_cutoff": 0.6066969526439807
+      "accuracy": 0.856216755319149,
+      "risk": 0.14378324468085107,
+      "confidence_cutoff": 0.5833824891496485
     },
     {
       "target_coverage": 0.5499999999999999,
       "n_answered": 6618,
       "coverage": 0.550033244680851,
-      "accuracy": 0.8223028105167725,
-      "risk": 0.17769718948322757,
-      "confidence_cutoff": 0.536416243264401
+      "accuracy": 0.8368087035358114,
+      "risk": 0.1631912964641886,
+      "confidence_cutoff": 0.5723392153560912
     },
     {
       "target_coverage": 0.6,
       "n_answered": 7219,
       "coverage": 0.5999833776595744,
-      "accuracy": 0.8009419587200444,
-      "risk": 0.19905804127995566,
-      "confidence_cutoff": 0.5271237437215324
+      "accuracy": 0.818257376367918,
+      "risk": 0.18174262363208202,
+      "confidence_cutoff": 0.5675554587224252
     },
     {
       "target_coverage": 0.65,
       "n_answered": 7821,
       "coverage": 0.6500166223404256,
-      "accuracy": 0.7839151003707966,
-      "risk": 0.21608489962920344,
-      "confidence_cutoff": 0.5264723426199934
+      "accuracy": 0.8047564250095895,
+      "risk": 0.19524357499041042,
+      "confidence_cutoff": 0.5608616346425195
     },
     {
       "target_coverage": 0.7,
       "n_answered": 8422,
       "coverage": 0.699966755319149,
-      "accuracy": 0.7706008074091665,
-      "risk": 0.22939919259083352,
-      "confidence_cutoff": 0.5250562666453575
+      "accuracy": 0.7886487770125861,
+      "risk": 0.2113512229874139,
+      "confidence_cutoff": 0.542201567718613
     },
     {
       "target_coverage": 0.75,
       "n_answered": 9024,
       "coverage": 0.75,
-      "accuracy": 0.7580895390070922,
-      "risk": 0.2419104609929078,
-      "confidence_cutoff": 0.5250295450209433
+      "accuracy": 0.7731604609929078,
+      "risk": 0.2268395390070922,
+      "confidence_cutoff": 0.46397265451466535
     },
     {
       "target_coverage": 0.7999999999999999,
       "n_answered": 9626,
       "coverage": 0.800033244680851,
-      "accuracy": 0.7469353833367962,
-      "risk": 0.25306461666320385,
-      "confidence_cutoff": 0.5244412363125666
+      "accuracy": 0.7568044878454186,
+      "risk": 0.24319551215458135,
+      "confidence_cutoff": 0.4454516480996778
     },
     {
       "target_coverage": 0.85,
       "n_answered": 10227,
       "coverage": 0.8499833776595744,
-      "accuracy": 0.7371663244353183,
-      "risk": 0.26283367556468173,
-      "confidence_cutoff": 0.396975547294819
+      "accuracy": 0.7392197125256673,
+      "risk": 0.26078028747433263,
+      "confidence_cutoff": 0.37818401314600913
     },
     {
       "target_coverage": 0.9,
@@ -142,15 +142,15 @@
       "coverage": 0.9000166223404256,
       "accuracy": 0.7234278326715301,
       "risk": 0.27657216732846984,
-      "confidence_cutoff": 0.28435271198225437
+      "confidence_cutoff": 0.296268800971473
     },
     {
       "target_coverage": 0.95,
       "n_answered": 11430,
       "coverage": 0.949966755319149,
-      "accuracy": 0.710498687664042,
-      "risk": 0.289501312335958,
-      "confidence_cutoff": 0.283765216359217
+      "accuracy": 0.7144356955380577,
+      "risk": 0.28556430446194225,
+      "confidence_cutoff": 0.286202809787885
     },
     {
       "target_coverage": 1.0,
@@ -158,7 +158,7 @@
       "coverage": 1.0,
       "accuracy": 0.6983876329787234,
       "risk": 0.3016123670212766,
-      "confidence_cutoff": 0.28359000700996445
+      "confidence_cutoff": 0.23300975940720278
     }
   ],
   "cot": [
@@ -166,97 +166,97 @@
       "target_coverage": 0.05,
       "n_answered": 602,
       "coverage": 0.05003324468085106,
-      "accuracy": 0.867109634551495,
-      "risk": 0.132890365448505,
-      "confidence_cutoff": 0.8874111681680084
+      "accuracy": 0.9169435215946844,
+      "risk": 0.08305647840531562,
+      "confidence_cutoff": 0.9342804542935198
     },
     {
       "target_coverage": 0.1,
       "n_answered": 1203,
       "coverage": 0.09998337765957446,
-      "accuracy": 0.8736492103075644,
-      "risk": 0.12635078969243557,
-      "confidence_cutoff": 0.8546022262157699
+      "accuracy": 0.9260182876142976,
+      "risk": 0.0739817123857024,
+      "confidence_cutoff": 0.9113717015971287
     },
     {
       "target_coverage": 0.15,
       "n_answered": 1805,
       "coverage": 0.15001662234042554,
-      "accuracy": 0.8736842105263158,
-      "risk": 0.12631578947368421,
-      "confidence_cutoff": 0.8408934898234782
+      "accuracy": 0.9368421052631579,
+      "risk": 0.06315789473684211,
+      "confidence_cutoff": 0.904711912134732
     },
     {
       "target_coverage": 0.2,
       "n_answered": 2406,
       "coverage": 0.19996675531914893,
-      "accuracy": 0.8794679966749792,
-      "risk": 0.12053200332502079,
-      "confidence_cutoff": 0.8408934898234782
+      "accuracy": 0.92643391521197,
+      "risk": 0.07356608478802992,
+      "confidence_cutoff": 0.8909220225882567
     },
     {
       "target_coverage": 0.25,
       "n_answered": 3008,
       "coverage": 0.25,
-      "accuracy": 0.882313829787234,
-      "risk": 0.11768617021276596,
-      "confidence_cutoff": 0.8401172578371194
+      "accuracy": 0.9228723404255319,
+      "risk": 0.07712765957446809,
+      "confidence_cutoff": 0.8875816359819252
     },
     {
       "target_coverage": 0.3,
       "n_answered": 3610,
       "coverage": 0.3000332446808511,
-      "accuracy": 0.8795013850415513,
-      "risk": 0.12049861495844875,
-      "confidence_cutoff": 0.8401172578371194
+      "accuracy": 0.9218836565096953,
+      "risk": 0.0781163434903047,
+      "confidence_cutoff": 0.8843362707144523
     },
     {
       "target_coverage": 0.35,
       "n_answered": 4211,
       "coverage": 0.3499833776595745,
-      "accuracy": 0.8822132510092615,
-      "risk": 0.11778674899073854,
-      "confidence_cutoff": 0.8393473222057116
+      "accuracy": 0.9192590833531228,
+      "risk": 0.08074091664687723,
+      "confidence_cutoff": 0.881002335135713
     },
     {
       "target_coverage": 0.39999999999999997,
       "n_answered": 4813,
       "coverage": 0.4000166223404255,
-      "accuracy": 0.8846873052150426,
-      "risk": 0.11531269478495741,
-      "confidence_cutoff": 0.8393473222057116
+      "accuracy": 0.9212549345522543,
+      "risk": 0.07874506544774569,
+      "confidence_cutoff": 0.8752819158525807
     },
     {
       "target_coverage": 0.44999999999999996,
       "n_answered": 5414,
       "coverage": 0.4499667553191489,
-      "accuracy": 0.8816032508311784,
-      "risk": 0.11839674916882158,
-      "confidence_cutoff": 0.8379833712808581
+      "accuracy": 0.9239009974141116,
+      "risk": 0.07609900258588843,
+      "confidence_cutoff": 0.8623982244244534
     },
     {
       "target_coverage": 0.49999999999999994,
       "n_answered": 6016,
       "coverage": 0.5,
-      "accuracy": 0.8831449468085106,
-      "risk": 0.11685505319148937,
-      "confidence_cutoff": 0.8379833712808581
+      "accuracy": 0.9203789893617021,
+      "risk": 0.07962101063829788,
+      "confidence_cutoff": 0.8159742058683097
     },
     {
       "target_coverage": 0.5499999999999999,
       "n_answered": 6618,
       "coverage": 0.550033244680851,
-      "accuracy": 0.8872771229978845,
-      "risk": 0.11272287700211545,
-      "confidence_cutoff": 0.8375700934160314
+      "accuracy": 0.9113025083106678,
+      "risk": 0.08869749168933212,
+      "confidence_cutoff": 0.7300208216181683
     },
     {
       "target_coverage": 0.6,
       "n_answered": 7219,
       "coverage": 0.5999833776595744,
-      "accuracy": 0.8869649535946807,
-      "risk": 0.11303504640531929,
-      "confidence_cutoff": 0.8375700934160314
+      "accuracy": 0.9002631943482476,
+      "risk": 0.09973680565175232,
+      "confidence_cutoff": 0.6936932842508579
     },
     {
       "target_coverage": 0.65,
@@ -264,55 +264,55 @@
       "coverage": 0.6500166223404256,
       "accuracy": 0.8823679836338064,
       "risk": 0.11763201636619358,
-      "confidence_cutoff": 0.6259744667997386
+      "confidence_cutoff": 0.6318996044225166
     },
     {
       "target_coverage": 0.7,
       "n_answered": 8422,
       "coverage": 0.699966755319149,
-      "accuracy": 0.863571598195203,
-      "risk": 0.13642840180479696,
-      "confidence_cutoff": 0.5625424665265785
+      "accuracy": 0.8704583234386132,
+      "risk": 0.12954167656138685,
+      "confidence_cutoff": 0.6079818438454035
     },
     {
       "target_coverage": 0.75,
       "n_answered": 9024,
       "coverage": 0.75,
-      "accuracy": 0.8466312056737588,
-      "risk": 0.15336879432624115,
-      "confidence_cutoff": 0.5619784742297798
+      "accuracy": 0.852947695035461,
+      "risk": 0.147052304964539,
+      "confidence_cutoff": 0.5962157702572194
     },
     {
       "target_coverage": 0.7999999999999999,
       "n_answered": 9626,
       "coverage": 0.800033244680851,
-      "accuracy": 0.8338873883232911,
-      "risk": 0.1661126116767089,
-      "confidence_cutoff": 0.5614201256640504
+      "accuracy": 0.8407438188240183,
+      "risk": 0.15925618117598173,
+      "confidence_cutoff": 0.5796029330957961
     },
     {
       "target_coverage": 0.85,
       "n_answered": 10227,
       "coverage": 0.8499833776595744,
-      "accuracy": 0.8197907499755549,
-      "risk": 0.1802092500244451,
-      "confidence_cutoff": 0.5604335872908363
+      "accuracy": 0.8281998631074606,
+      "risk": 0.17180013689253937,
+      "confidence_cutoff": 0.48963260306000483
     },
     {
       "target_coverage": 0.9,
       "n_answered": 10829,
       "coverage": 0.9000166223404256,
-      "accuracy": 0.8092159940899437,
-      "risk": 0.19078400591005634,
-      "confidence_cutoff": 0.5601353109929585
+      "accuracy": 0.8133715024471327,
+      "risk": 0.1866284975528673,
+      "confidence_cutoff": 0.4606567462656301
     },
     {
       "target_coverage": 0.95,
       "n_answered": 11430,
       "coverage": 0.949966755319149,
-      "accuracy": 0.7954505686789152,
-      "risk": 0.20454943132108486,
-      "confidence_cutoff": 0.2940515338279889
+      "accuracy": 0.7965879265091863,
+      "risk": 0.20341207349081364,
+      "confidence_cutoff": 0.3053885196802716
     },
     {
       "target_coverage": 1.0,
