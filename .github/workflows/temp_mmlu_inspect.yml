@@ -11,45 +11,109 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: temp-mmlu-pro-unpack-20260622
-      - name: Inspect official output archives
+      - name: Build compact MMLU-Pro prediction bundle
         run: |
           python - <<'PY'
-          import io, json, os, urllib.request, zipfile
-          urls = {
-              'direct_sonnet35': 'https://github.com/TIGER-AI-Lab/MMLU-Pro/raw/refs/heads/main/eval_results/model_outputs_sonnet-3.5_0shots_09_34_29.zip',
-              'cot_sonnet35': 'https://github.com/TIGER-AI-Lab/MMLU-Pro/raw/refs/heads/main/eval_results/model_outputs_claude-3.5-sonnet_5shots.zip',
+          import base64, hashlib, io, json, os, re, urllib.request, zipfile, zlib
+
+          base='https://github.com/TIGER-AI-Lab/MMLU-Pro/raw/refs/heads/main/eval_results/'
+          archives={
+            'direct_sonnet35':'model_outputs_sonnet-3.5_0shots_09_34_29.zip',
+            'direct_sonnet':'model_outputs_sonnet_0shots_12_01_18.zip',
+            'direct_flash':'model_outputs_flash_0shots_00_35_03.zip',
+            'cot_sonnet35':'model_outputs_claude-3.5-sonnet_5shots.zip',
+            'cot_sonnet35_20241022':'model_outputs_claude-3-5-sonnet-20241022_5shots.json.zip',
+            'cot_flash002':'model_outputs_gemini-1.5-flash-002_5shots.zip',
           }
-          out=[]
-          for name,url in urls.items():
-              data=urllib.request.urlopen(url, timeout=120).read()
-              out.append(f'ARCHIVE {name} bytes={len(data)}')
-              with zipfile.ZipFile(io.BytesIO(data)) as z:
-                  out.append('FILES '+json.dumps(z.namelist()))
-                  for member in z.namelist():
-                      if member.endswith('/'):
-                          continue
-                      raw=z.read(member)
-                      out.append(f'MEMBER {member} bytes={len(raw)} prefix={raw[:120]!r}')
-                      if member.lower().endswith(('.json','.jsonl')):
-                          text=raw.decode('utf-8',errors='replace')
-                          try:
-                              obj=json.loads(text)
-                              out.append('JSON_TYPE '+type(obj).__name__)
-                              if isinstance(obj,list):
-                                  out.append('N '+str(len(obj)))
-                                  for r in obj[:2]: out.append('REC '+json.dumps(r,ensure_ascii=False)[:3000])
-                              elif isinstance(obj,dict):
-                                  out.append('KEYS '+json.dumps(list(obj)[:30]))
-                          except Exception as e:
-                              out.append('JSON_LOAD_ERROR '+repr(e))
-                              for line in text.splitlines()[:2]: out.append('LINE '+line[:3000])
+          ans_pat=re.compile(r'(?:final\s+answer|answer\s+is)\s*[:=]?\s*\(?([A-J])\)?',re.I)
+
+          def load_records(url):
+            req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'})
+            raw=urllib.request.urlopen(req,timeout=240).read()
+            members=[]; records=[]
+            with zipfile.ZipFile(io.BytesIO(raw)) as z:
+              for member in z.namelist():
+                if member.endswith('/'): continue
+                b=z.read(member); members.append({'name':member,'bytes':len(b)})
+                if not member.lower().endswith(('.json','.jsonl')): continue
+                text=b.decode('utf-8',errors='replace')
+                try:
+                  obj=json.loads(text)
+                  if isinstance(obj,list): records.extend(x for x in obj if isinstance(x,dict))
+                  elif isinstance(obj,dict):
+                    if isinstance(obj.get('data'),list): records.extend(x for x in obj['data'] if isinstance(x,dict))
+                    else: records.append(obj)
+                except Exception:
+                  for line in text.splitlines():
+                    line=line.strip()
+                    if not line: continue
+                    try:
+                      x=json.loads(line)
+                      if isinstance(x,dict): records.append(x)
+                    except Exception: pass
+            return raw, members, records
+
+          def prediction(r):
+            for k in ('pred','prediction','predicted_answer'):
+              v=r.get(k)
+              if isinstance(v,str):
+                v=v.strip().upper().strip('()[]{}.:, ')
+                if len(v)==1 and v in 'ABCDEFGHIJ': return v, True
+            for k in ('model_outputs','rationale','solution','output','response'):
+              v=r.get(k)
+              if isinstance(v,str):
+                ms=list(ans_pat.finditer(v))
+                if ms: return ms[-1].group(1).upper(), True
+            return '?', False
+
+          by_model={}; manifest={'archives':{},'model_order':list(archives)}; canonical={}
+          for name,fn in archives.items():
+            raw,members,records=load_records(base+fn)
+            d={}; extracted=0
+            for r in records:
+              try: qid=int(r['question_id'])
+              except Exception: continue
+              p,ok=prediction(r); extracted+=int(ok)
+              d[qid]=p
+              if qid not in canonical and all(k in r for k in ('question','answer','category')):
+                canonical[qid]={'question':str(r['question']),'answer':str(r['answer']),'category':str(r['category'])}
+            by_model[name]=d
+            correct=sum(1 for r in records if str(r.get('pred','?')).upper()==str(r.get('answer','!')).upper())
+            manifest['archives'][name]={
+              'filename':fn,'zip_bytes':len(raw),'zip_sha256':hashlib.sha256(raw).hexdigest(),
+              'members':members,'record_count':len(records),'unique_qids':len(d),
+              'extracted_predictions':extracted,'embedded_pred_accuracy':correct/max(1,len(records))
+            }
+
+          qids=sorted(set().union(*(set(d) for d in by_model.values())))
+          manifest['qid_min']=min(qids); manifest['qid_max']=max(qids); manifest['qid_count']=len(qids)
+          manifest['missing_by_model']={m:len(qids)-len(d) for m,d in by_model.items()}
+          canon_rows=[]
+          for qid in qids:
+            c=canonical.get(qid,{})
+            canon_rows.append(f"{qid}\t{c.get('question','')}\t{c.get('answer','')}\t{c.get('category','')}")
+          manifest['canonical_sha256']=hashlib.sha256(('\n'.join(canon_rows)).encode()).hexdigest()
+          payload={
+            'format':'mmlu-pro-prediction-bundle-v1',
+            'qids':qids,
+            'model_order':list(archives),
+            'predictions':{m:''.join(by_model[m].get(q,'?') for q in qids) for m in archives},
+            'canonical_answer':''.join(canonical.get(q,{}).get('answer','?') for q in qids),
+            'canonical_category':[canonical.get(q,{}).get('category','') for q in qids],
+            'canonical_sha256':manifest['canonical_sha256'],
+          }
+          packed=zlib.compress(json.dumps(payload,separators=(',',':'),ensure_ascii=False).encode(),9)
+          b64=base64.b64encode(packed).decode()
           os.makedirs('temp_mmlu_outputs',exist_ok=True)
-          open('temp_mmlu_outputs/inspect.txt','w',encoding='utf-8').write('\n'.join(out))
+          with open('temp_mmlu_outputs/prediction_bundle.b64.txt','w') as f:
+            for i in range(0,len(b64),4000): f.write(b64[i:i+4000]+'\n')
+          with open('temp_mmlu_outputs/manifest.json','w') as f: json.dump(manifest,f,indent=2)
+          print(json.dumps(manifest,indent=2))
           PY
-      - name: Commit inspection
+      - name: Commit compact bundle
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add temp_mmlu_outputs/inspect.txt
-          git commit -m 'Add temporary MMLU output inspection [skip ci]' || exit 0
+          git add temp_mmlu_outputs/prediction_bundle.b64.txt temp_mmlu_outputs/manifest.json
+          git commit -m 'Add compact MMLU-Pro prediction bundle [skip ci]' || exit 0
           git push origin temp-mmlu-pro-unpack-20260622
