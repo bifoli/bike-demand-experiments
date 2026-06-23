@@ -1,0 +1,55 @@
+name: temp-mmlu-inspect
+on:
+  push:
+    branches: [temp-mmlu-pro-unpack-20260622]
+permissions:
+  contents: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: temp-mmlu-pro-unpack-20260622
+      - name: Inspect official output archives
+        run: |
+          python - <<'PY'
+          import io, json, os, urllib.request, zipfile
+          urls = {
+              'direct_sonnet35': 'https://github.com/TIGER-AI-Lab/MMLU-Pro/raw/refs/heads/main/eval_results/model_outputs_sonnet-3.5_0shots_09_34_29.zip',
+              'cot_sonnet35': 'https://github.com/TIGER-AI-Lab/MMLU-Pro/raw/refs/heads/main/eval_results/model_outputs_claude-3.5-sonnet_5shots.zip',
+          }
+          out=[]
+          for name,url in urls.items():
+              data=urllib.request.urlopen(url, timeout=120).read()
+              out.append(f'ARCHIVE {name} bytes={len(data)}')
+              with zipfile.ZipFile(io.BytesIO(data)) as z:
+                  out.append('FILES '+json.dumps(z.namelist()))
+                  for member in z.namelist():
+                      if member.endswith('/'):
+                          continue
+                      raw=z.read(member)
+                      out.append(f'MEMBER {member} bytes={len(raw)} prefix={raw[:120]!r}')
+                      if member.lower().endswith(('.json','.jsonl')):
+                          text=raw.decode('utf-8',errors='replace')
+                          try:
+                              obj=json.loads(text)
+                              out.append('JSON_TYPE '+type(obj).__name__)
+                              if isinstance(obj,list):
+                                  out.append('N '+str(len(obj)))
+                                  for r in obj[:2]: out.append('REC '+json.dumps(r,ensure_ascii=False)[:3000])
+                              elif isinstance(obj,dict):
+                                  out.append('KEYS '+json.dumps(list(obj)[:30]))
+                          except Exception as e:
+                              out.append('JSON_LOAD_ERROR '+repr(e))
+                              for line in text.splitlines()[:2]: out.append('LINE '+line[:3000])
+          os.makedirs('temp_mmlu_outputs',exist_ok=True)
+          open('temp_mmlu_outputs/inspect.txt','w',encoding='utf-8').write('\n'.join(out))
+          PY
+      - name: Commit inspection
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add temp_mmlu_outputs/inspect.txt
+          git commit -m 'Add temporary MMLU output inspection [skip ci]' || exit 0
+          git push origin temp-mmlu-pro-unpack-20260622
