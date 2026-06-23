@@ -54,7 +54,7 @@
         "lower": 0.7000000000000001,
         "upper": 0.8,
         "count": 4833,
-        "mean_confidence": 0.7844337905129417,
+        "mean_confidence": 0.7844337905129419,
         "accuracy": 0.8601282847092903
       },
       {
@@ -91,56 +91,56 @@
         "lower": 0.2,
         "upper": 0.30000000000000004,
         "count": 767,
-        "mean_confidence": 0.29393594101376475,
+        "mean_confidence": 0.29393594101384474,
         "accuracy": 0.31681877444589307
       },
       {
         "lower": 0.30000000000000004,
         "upper": 0.4,
         "count": 30,
-        "mean_confidence": 0.31778570574587844,
+        "mean_confidence": 0.3177857057458945,
         "accuracy": 0.5
       },
       {
         "lower": 0.4,
         "upper": 0.5,
         "count": 32,
-        "mean_confidence": 0.41992740802475303,
+        "mean_confidence": 0.4199274080249136,
         "accuracy": 0.40625
       },
       {
         "lower": 0.5,
         "upper": 0.6000000000000001,
         "count": 3307,
-        "mean_confidence": 0.5628971645193164,
+        "mean_confidence": 0.562897164519596,
         "accuracy": 0.6241306319927427
       },
       {
         "lower": 0.6000000000000001,
         "upper": 0.7000000000000001,
         "count": 170,
-        "mean_confidence": 0.6236048732779046,
+        "mean_confidence": 0.6236048732780585,
         "accuracy": 0.5882352941176471
       },
       {
         "lower": 0.7000000000000001,
         "upper": 0.8,
         "count": 57,
-        "mean_confidence": 0.7824017680205462,
+        "mean_confidence": 0.782401768021113,
         "accuracy": 0.8070175438596491
       },
       {
         "lower": 0.8,
         "upper": 0.9,
         "count": 7096,
-        "mean_confidence": 0.8420457184413997,
+        "mean_confidence": 0.8420457184418004,
         "accuracy": 0.8889515219842165
       },
       {
         "lower": 0.9,
         "upper": 1.0,
         "count": 573,
-        "mean_confidence": 0.9336784060913925,
+        "mean_confidence": 0.9336784060915972,
         "accuracy": 0.8673647469458988
       }
     ]
@@ -238,56 +238,56 @@
           "lower": 0.2,
           "upper": 0.30000000000000004,
           "count": 65,
-          "mean_confidence": 0.29373278342289905,
+          "mean_confidence": 0.2937327834229767,
           "accuracy": 0.38461538461538464
         },
         {
           "lower": 0.30000000000000004,
           "upper": 0.4,
           "count": 4,
-          "mean_confidence": 0.327028657064911,
+          "mean_confidence": 0.32702865706494544,
           "accuracy": 0.75
         },
         {
           "lower": 0.4,
           "upper": 0.5,
           "count": 6,
-          "mean_confidence": 0.40594940997399975,
+          "mean_confidence": 0.405949409974141,
           "accuracy": 0.6666666666666666
         },
         {
           "lower": 0.5,
           "upper": 0.6000000000000001,
           "count": 299,
-          "mean_confidence": 0.5623032867456628,
+          "mean_confidence": 0.5623032867459499,
           "accuracy": 0.6153846153846154
         },
         {
           "lower": 0.6000000000000001,
           "upper": 0.7000000000000001,
           "count": 21,
-          "mean_confidence": 0.6218257938719616,
+          "mean_confidence": 0.6218257938722246,
           "accuracy": 0.6190476190476191
         },
         {
           "lower": 0.7000000000000001,
           "upper": 0.8,
           "count": 13,
-          "mean_confidence": 0.7829220536748628,
+          "mean_confidence": 0.7829220536752177,
           "accuracy": 0.6923076923076923
         },
         {
           "lower": 0.8,
           "upper": 0.9,
           "count": 1134,
-          "mean_confidence": 0.8413377751018444,
+          "mean_confidence": 0.8413377751022418,
           "accuracy": 0.917989417989418
         },
         {
           "lower": 0.9,
           "upper": 1.0,
           "count": 91,
-          "mean_confidence": 0.9365309699168135,
+          "mean_confidence": 0.9365309699169745,
           "accuracy": 0.9340659340659341
         }
       ]
@@ -340,21 +340,21 @@
           "lower": 0.6000000000000001,
           "upper": 0.7000000000000001,
           "count": 25,
-          "mean_confidence": 0.6076045021638362,
+          "mean_confidence": 0.6076045021638363,
           "accuracy": 0.48
         },
         {
           "lower": 0.7000000000000001,
           "upper": 0.8,
           "count": 325,
-          "mean_confidence": 0.7872213818598635,
+          "mean_confidence": 0.7872213818598637,
           "accuracy": 0.6953846153846154
         },
         {
           "lower": 0.8,
           "upper": 0.9,
           "count": 91,
-          "mean_confidence": 0.8271108941314568,
+          "mean_confidence": 0.827110894131457,
           "accuracy": 0.9120879120879121
         },
         {
@@ -384,35 +384,35 @@
           "lower": 0.2,
           "upper": 0.30000000000000004,
           "count": 27,
-          "mean_confidence": 0.294115195386956,
+          "mean_confidence": 0.29411519538701353,
           "accuracy": 0.48148148148148145
         },
         {
           "lower": 0.30000000000000004,
           "upper": 0.4,
           "count": 2,
-          "mean_confidence": 0.31540122360615336,
+          "mean_confidence": 0.3154012236061877,
           "accuracy": 0.5
         },
         {
           "lower": 0.4,
           "upper": 0.5,
           "count": 2,
-          "mean_confidence": 0.42097785154943135,
+          "mean_confidence": 0.420977851549738,
           "accuracy": 0.0
         },
         {
           "lower": 0.5,
           "upper": 0.6000000000000001,
           "count": 213,
-          "mean_confidence": 0.5632906260195177,
+          "mean_confidence": 0.5632906260198084,
           "accuracy": 0.5211267605633803
         },
         {
           "lower": 0.6000000000000001,
           "upper": 0.7000000000000001,
           "count": 18,
-          "mean_confidence": 0.6265882629431707,
+          "mean_confidence": 0.6265882629433105,
           "accuracy": 0.7777777777777778
         },
         {
@@ -426,14 +426,14 @@
           "lower": 0.8,
           "upper": 0.9,
           "count": 485,
-          "mean_confidence": 0.8444305570559411,
+          "mean_confidence": 0.8444305570563311,
           "accuracy": 0.7525773195876289
         },
         {
           "lower": 0.9,
           "upper": 1.0,
           "count": 71,
-          "mean_confidence": 0.9350220451564073,
+          "mean_confidence": 0.935022045156612,
           "accuracy": 0.8450704225352113
         }
       ]
@@ -493,7 +493,7 @@
           "lower": 0.7000000000000001,
           "upper": 0.8,
           "count": 255,
-          "mean_confidence": 0.7869534166540935,
+          "mean_confidence": 0.7869534166540936,
           "accuracy": 0.6039215686274509
         },
         {
@@ -530,14 +530,14 @@
           "lower": 0.2,
           "upper": 0.30000000000000004,
           "count": 64,
-          "mean_confidence": 0.2953400076018361,
+          "mean_confidence": 0.29534000760191287,
           "accuracy": 0.296875
         },
         {
           "lower": 0.30000000000000004,
           "upper": 0.4,
           "count": 6,
-          "mean_confidence": 0.3194212437170973,
+          "mean_confidence": 0.3194212437171088,
           "accuracy": 0.3333333333333333
         },
         {
@@ -551,35 +551,35 @@
           "lower": 0.5,
           "upper": 0.6000000000000001,
           "count": 483,
-          "mean_confidence": 0.5647638328166158,
+          "mean_confidence": 0.5647638328169116,
           "accuracy": 0.5590062111801242
         },
         {
           "lower": 0.6000000000000001,
           "upper": 0.7000000000000001,
           "count": 28,
-          "mean_confidence": 0.6245697653446721,
+          "mean_confidence": 0.6245697653447921,
           "accuracy": 0.5357142857142857
         },
         {
           "lower": 0.7000000000000001,
           "upper": 0.8,
           "count": 1,
-          "mean_confidence": 0.7806364039042711,
+          "mean_confidence": 0.7806364039042712,
           "accuracy": 1.0
         },
         {
           "lower": 0.8,
           "upper": 0.9,
           "count": 466,
-          "mean_confidence": 0.8456714382728912,
+          "mean_confidence": 0.8456714382732786,
           "accuracy": 0.6845493562231759
         },
         {
           "lower": 0.9,
           "upper": 1.0,
           "count": 53,
-          "mean_confidence": 0.9327810219450462,
+          "mean_confidence": 0.9327810219452617,
           "accuracy": 0.7924528301886793
         }
       ]
@@ -676,56 +676,56 @@
           "lower": 0.2,
           "upper": 0.30000000000000004,
           "count": 173,
-          "mean_confidence": 0.29351842616595647,
+          "mean_confidence": 0.29351842616604595,
           "accuracy": 0.2543352601156069
         },
         {
           "lower": 0.30000000000000004,
           "upper": 0.4,
           "count": 2,
-          "mean_confidence": 0.32699241209969215,
+          "mean_confidence": 0.32699241209976093,
           "accuracy": 0.0
         },
         {
           "lower": 0.4,
           "upper": 0.5,
           "count": 8,
-          "mean_confidence": 0.4322765691066021,
+          "mean_confidence": 0.43227656910674395,
           "accuracy": 0.125
         },
         {
           "lower": 0.5,
           "upper": 0.6000000000000001,
           "count": 384,
-          "mean_confidence": 0.5615330510485665,
+          "mean_confidence": 0.5615330510488514,
           "accuracy": 0.578125
         },
         {
           "lower": 0.6000000000000001,
           "upper": 0.7000000000000001,
           "count": 14,
-          "mean_confidence": 0.6281348325007597,
+          "mean_confidence": 0.6281348325008796,
           "accuracy": 0.5
         },
         {
           "lower": 0.7000000000000001,
           "upper": 0.8,
           "count": 11,
-          "mean_confidence": 0.7819056493058167,
+          "mean_confidence": 0.7819056493068658,
           "accuracy": 0.7272727272727273
         },
         {
           "lower": 0.8,
           "upper": 0.9,
           "count": 334,
-          "mean_confidence": 0.840078461575736,
+          "mean_confidence": 0.8400784615760941,
           "accuracy": 0.8413173652694611
         },
         {
           "lower": 0.9,
           "upper": 1.0,
           "count": 43,
-          "mean_confidence": 0.9303133984517579,
+          "mean_confidence": 0.9303133984519502,
           "accuracy": 0.9302325581395349
         }
       ]

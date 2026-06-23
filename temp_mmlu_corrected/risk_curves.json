@@ -12,17 +12,17 @@
       "target_coverage": 0.1,
       "n_answered": 1203,
       "coverage": 0.09998337765957446,
-      "accuracy": 0.8437240232751455,
-      "risk": 0.15627597672485452,
+      "accuracy": 0.8470490440565254,
+      "risk": 0.15295095594347466,
       "confidence_cutoff": 0.7894565640856697
     },
     {
       "target_coverage": 0.15,
       "n_answered": 1805,
       "coverage": 0.15001662234042554,
-      "accuracy": 0.8404432132963989,
-      "risk": 0.1595567867036011,
-      "confidence_cutoff": 0.7894565640856696
+      "accuracy": 0.8421052631578947,
+      "risk": 0.15789473684210525,
+      "confidence_cutoff": 0.7894565640856697
     },
     {
       "target_coverage": 0.2,
@@ -232,7 +232,7 @@
       "coverage": 0.4499667553191489,
       "accuracy": 0.8816032508311784,
       "risk": 0.11839674916882158,
-      "confidence_cutoff": 0.8379833712788293
+      "confidence_cutoff": 0.8379833712808581
     },
     {
       "target_coverage": 0.49999999999999994,
@@ -240,7 +240,7 @@
       "coverage": 0.5,
       "accuracy": 0.8831449468085106,
       "risk": 0.11685505319148937,
-      "confidence_cutoff": 0.8379833712788293
+      "confidence_cutoff": 0.8379833712808581
     },
     {
       "target_coverage": 0.5499999999999999,
@@ -262,9 +262,9 @@
       "target_coverage": 0.65,
       "n_answered": 7821,
       "coverage": 0.6500166223404256,
-      "accuracy": 0.8826237054085155,
-      "risk": 0.11737629459148446,
-      "confidence_cutoff": 0.6259744667988991
+      "accuracy": 0.8823679836338064,
+      "risk": 0.11763201636619358,
+      "confidence_cutoff": 0.6259744667997386
     },
     {
       "target_coverage": 0.7,
@@ -294,9 +294,9 @@
       "target_coverage": 0.85,
       "n_answered": 10227,
       "coverage": 0.8499833776595744,
-      "accuracy": 0.8192040676640266,
-      "risk": 0.1807959323359734,
-      "confidence_cutoff": 0.5604335872893712
+      "accuracy": 0.8197907499755549,
+      "risk": 0.1802092500244451,
+      "confidence_cutoff": 0.5604335872908363
     },
     {
       "target_coverage": 0.9,
