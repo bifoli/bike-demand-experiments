@@ -1,0 +1,114 @@
+{
+  "archives": {
+    "direct_sonnet35": {
+      "filename": "model_outputs_sonnet-3.5_0shots_09_34_29.zip",
+      "zip_bytes": 5849089,
+      "zip_sha256": "b890e47cfe2dab7bce447bdfe2141453dc0c2e33adff8edc9c168d2e1dec9add",
+      "members": [
+        {
+          "name": "model_outputs_sonnet-3.5_0shots_09_34_29.json",
+          "bytes": 23457708
+        }
+      ],
+      "record_count": 12032,
+      "unique_qids": 12032,
+      "extracted_predictions": 12032,
+      "embedded_pred_accuracy": 0.7283909574468085
+    },
+    "direct_sonnet": {
+      "filename": "model_outputs_sonnet_0shots_12_01_18.zip",
+      "zip_bytes": 4598679,
+      "zip_sha256": "b60c4542304de0e56652aff12ef2eeb4f0b5ca22b744db181b0a7d84df3fd09a",
+      "members": [
+        {
+          "name": "model_outputs_sonnet_0shots_12_01_18.json",
+          "bytes": 19862567
+        }
+      ],
+      "record_count": 12031,
+      "unique_qids": 11631,
+      "extracted_predictions": 12031,
+      "embedded_pred_accuracy": 0.5511595046130828
+    },
+    "direct_flash": {
+      "filename": "model_outputs_flash_0shots_00_35_03.zip",
+      "zip_bytes": 4454796,
+      "zip_sha256": "b13cfc48279c285f0ebb6dbb48816c056c2e81acbf07799f8dbf4bcf7e50c905",
+      "members": [
+        {
+          "name": "model_outputs_flash_0shots_00_35_03.json",
+          "bytes": 18395889
+        }
+      ],
+      "record_count": 12032,
+      "unique_qids": 12032,
+      "extracted_predictions": 12032,
+      "embedded_pred_accuracy": 0.5912566489361702
+    },
+    "cot_sonnet35": {
+      "filename": "model_outputs_claude-3.5-sonnet_5shots.zip",
+      "zip_bytes": 5832962,
+      "zip_sha256": "75694e83610ffa500531a34d28a82fa93062eaa284b134427ea69055e816ca60",
+      "members": [
+        {
+          "name": "model_outputs_claude-3.5-sonnet_5shots.json",
+          "bytes": 23526902
+        }
+      ],
+      "record_count": 12030,
+      "unique_qids": 12030,
+      "extracted_predictions": 12030,
+      "embedded_pred_accuracy": 0.7611803823773898
+    },
+    "cot_sonnet35_20241022": {
+      "filename": "model_outputs_claude-3-5-sonnet-20241022_5shots.json.zip",
+      "zip_bytes": 5593166,
+      "zip_sha256": "22c6e8b47fe76212bec6c1e96c52d9a447e90a15874d76f1e3e20c4404a39867",
+      "members": [
+        {
+          "name": "model_outputs_claude-3-5-sonnet-20241022_5shots.json",
+          "bytes": 22141090
+        }
+      ],
+      "record_count": 12032,
+      "unique_qids": 12032,
+      "extracted_predictions": 12032,
+      "embedded_pred_accuracy": 0.7764295212765957
+    },
+    "cot_flash002": {
+      "filename": "model_outputs_gemini-1.5-flash-002_5shots.zip",
+      "zip_bytes": 3926017,
+      "zip_sha256": "fed3caed9a9c1bfc7da74e5116f70ffdb9023794d1677eb2f7d48a2a4adec2e7",
+      "members": [
+        {
+          "name": "model_outputs_gemini-1.5-flash-002_5shots.json",
+          "bytes": 16213116
+        }
+      ],
+      "record_count": 12012,
+      "unique_qids": 12012,
+      "extracted_predictions": 11941,
+      "embedded_pred_accuracy": 0.6409423909423909
+    }
+  },
+  "model_order": [
+    "direct_sonnet35",
+    "direct_sonnet",
+    "direct_flash",
+    "cot_sonnet35",
+    "cot_sonnet35_20241022",
+    "cot_flash002"
+  ],
+  "qid_min": 70,
+  "qid_max": 12256,
+  "qid_count": 12032,
+  "missing_by_model": {
+    "direct_sonnet35": 0,
+    "direct_sonnet": 401,
+    "direct_flash": 0,
+    "cot_sonnet35": 2,
+    "cot_sonnet35_20241022": 0,
+    "cot_flash002": 20
+  },
+  "canonical_sha256": "f6e2ff35f8040ceb9c0b18aaab5c10dfeef0856feb1d7e1d09494993c6717148"
+}
