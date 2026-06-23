@@ -1,0 +1,55 @@
+name: temp-mmlu-primary-category
+on:
+  push:
+    branches: [temp-mmlu-pro-unpack-20260622]
+permissions:
+  contents: write
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: temp-mmlu-pro-unpack-20260622
+      - run: python -m pip install -q numpy scipy scikit-learn
+      - name: Re-run with category-calibrated downstream risk scores
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/temp_mmlu_corrected.yml').read_text().splitlines()
+          start=next(i for i,x in enumerate(p) if "cat > /tmp/corrected.py <<'PY'" in x)+1
+          end=next(i for i in range(start,len(p)) if p[i].strip()=='PY')
+          code='\n'.join(x[10:] if x.startswith('          ') else x for x in p[start:end])+'\n'
+          replacements={
+            "selective={z:select(c['global']":"selective={z:select(c['category']",
+            "riskcurves={z:select(c['global']":"riskcurves={z:select(c['category']",
+            "risktiers={z:tiers(c['global']":"risktiers={z:tiers(c['category']",
+            "row[z]=metric(c['global']":"row[z]=metric(c['category']",
+            "reliability['overall'][z]=reliab(c['global']":"reliability['overall'][z]=reliab(c['category']",
+            "reliability['domains'][d][z]=reliab(c['global']":"reliability['domains'][d][z]=reliab(c['category']",
+            "Pd=cond['direct']['global']; Pc=cond['cot']['global']":"Pd=cond['direct']['category']; Pc=cond['cot']['category']",
+          }
+          for a,b in replacements.items():
+            assert a in code,a
+            code=code.replace(a,b)
+          Path('/tmp/corrected_category.py').write_text(code)
+          PY
+          python /tmp/corrected_category.py
+      - name: Bundle results and commit
+        run: |
+          python - <<'PY'
+          import base64,io,os,zipfile
+          files=['core.json','category.json','domains.json','reliability.json','risk_curves.json','failure.json']
+          bio=io.BytesIO()
+          with zipfile.ZipFile(bio,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+            for fn in files: z.write('temp_mmlu_corrected/'+fn,fn)
+          enc=base64.b64encode(bio.getvalue()).decode()
+          with open('temp_mmlu_corrected/results_bundle.b64.txt','w') as f:
+            for i in range(0,len(enc),3000): f.write(enc[i:i+3000]+'\n')
+          print('bundle_bytes',len(bio.getvalue()),'base64_chars',len(enc))
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add temp_mmlu_corrected
+          git commit -m 'Use category-calibrated risk scores and bundle results [skip ci]' || exit 0
+          git push origin temp-mmlu-pro-unpack-20260622
