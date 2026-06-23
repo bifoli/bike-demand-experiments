@@ -81,7 +81,8 @@ jobs:
           for name,d in by_model.items():
             s=''.join(d.get(q,'?') for q in qids)
             enc=base64.b64encode(zlib.compress(s.encode(),9)).decode()
-            open(f'temp_mmlu_outputs/models/{name}.b64.txt','w').write(enc+'\n')
+            with open(f'temp_mmlu_outputs/models/{name}.b64.txt','w') as f:
+              for i in range(0,len(enc),3000): f.write(enc[i:i+3000]+'\n')
           open('temp_mmlu_outputs/qids.txt','w').write(','.join(map(str,qids))+'\n')
           with open('temp_mmlu_outputs/manifest.json','w') as f: json.dump(manifest,f,indent=2)
           print(json.dumps(manifest,indent=2))
@@ -91,5 +92,5 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add temp_mmlu_outputs/models temp_mmlu_outputs/qids.txt temp_mmlu_outputs/manifest.json
-          git commit -m 'Add per-model MMLU-Pro prediction strings [skip ci]' || exit 0
+          git commit -m 'Wrap per-model MMLU-Pro prediction strings [skip ci]' || exit 0
           git push origin temp-mmlu-pro-unpack-20260622
