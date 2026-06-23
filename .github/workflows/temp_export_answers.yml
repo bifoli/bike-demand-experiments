@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: temp-mmlu-pro-unpack-20260622
-      - name: Export canonical answer string from inference traces
+      - name: Export canonical strings from inference traces
         run: |
           python - <<'PY'
           import base64,io,json,os,urllib.request,zipfile,zlib
@@ -20,16 +20,20 @@ jobs:
           with zipfile.ZipFile(io.BytesIO(raw)) as z:
               obj=json.loads(z.read(z.namelist()[0]).decode())
           obj=sorted(obj,key=lambda r:int(r['question_id']))
-          s=''.join(str(r['answer']).upper() for r in obj)
-          enc=base64.b64encode(zlib.compress(s.encode(),9)).decode()
+          vals={
+            'trace_answers.b64.txt': ''.join(str(r['answer']).upper() for r in obj),
+            'trace_option_counts.b64.txt': ''.join(format(len(r['options']),'X') for r in obj),
+          }
           os.makedirs('temp_mmlu_analysis',exist_ok=True)
-          with open('temp_mmlu_analysis/trace_answers.b64.txt','w') as f:
-              for i in range(0,len(enc),3000): f.write(enc[i:i+3000]+'\n')
+          for fn,s in vals.items():
+              enc=base64.b64encode(zlib.compress(s.encode(),9)).decode()
+              with open('temp_mmlu_analysis/'+fn,'w') as f:
+                  for i in range(0,len(enc),3000): f.write(enc[i:i+3000]+'\n')
           PY
-      - name: Commit answer string
+      - name: Commit canonical strings
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add temp_mmlu_analysis/trace_answers.b64.txt
-          git commit -m 'Export inference-trace answer string [skip ci]' || exit 0
+          git add temp_mmlu_analysis/trace_answers.b64.txt temp_mmlu_analysis/trace_option_counts.b64.txt
+          git commit -m 'Export inference-trace canonical strings [skip ci]' || exit 0
           git push origin temp-mmlu-pro-unpack-20260622
