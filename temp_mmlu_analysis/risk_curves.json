@@ -38,15 +38,15 @@
       "coverage": 0.25,
       "risk": 0.14361702127659576,
       "accuracy": 0.8563829787234043,
-      "confidence_cutoff": 0.7935024975631364
+      "confidence_cutoff": 0.7935024975675451
     },
     {
       "target_coverage": 0.3,
       "n_answered": 3610,
       "coverage": 0.3000332446808511,
-      "risk": 0.14182825484764544,
-      "accuracy": 0.8581717451523546,
-      "confidence_cutoff": 0.7935024975631363
+      "risk": 0.14238227146814406,
+      "accuracy": 0.8576177285318559,
+      "confidence_cutoff": 0.7935024975675451
     },
     {
       "target_coverage": 0.35,
@@ -108,9 +108,9 @@
       "target_coverage": 0.7,
       "n_answered": 8422,
       "coverage": 0.699966755319149,
-      "risk": 0.2240560436950843,
-      "accuracy": 0.7759439563049157,
-      "confidence_cutoff": 0.5297883092845044
+      "risk": 0.22583709332700072,
+      "accuracy": 0.7741629066729993,
+      "confidence_cutoff": 0.5297883092874172
     },
     {
       "target_coverage": 0.75,
@@ -148,9 +148,9 @@
       "target_coverage": 0.95,
       "n_answered": 11430,
       "coverage": 0.949966755319149,
-      "risk": 0.2853018372703412,
-      "accuracy": 0.7146981627296588,
-      "confidence_cutoff": 0.2851064881383559
+      "risk": 0.28547681539807523,
+      "accuracy": 0.7145231846019248,
+      "confidence_cutoff": 0.2851064881391778
     },
     {
       "target_coverage": 1.0,
@@ -184,7 +184,7 @@
       "coverage": 0.15001662234042554,
       "risk": 0.12409972299168975,
       "accuracy": 0.8759002770083103,
-      "confidence_cutoff": 0.8478618290055155
+      "confidence_cutoff": 0.8478618289972792
     },
     {
       "target_coverage": 0.2,
@@ -192,7 +192,7 @@
       "coverage": 0.19996675531914893,
       "risk": 0.12053200332502079,
       "accuracy": 0.8794679966749792,
-      "confidence_cutoff": 0.8478618290055155
+      "confidence_cutoff": 0.8478618289972792
     },
     {
       "target_coverage": 0.25,
@@ -272,7 +272,7 @@
       "coverage": 0.699966755319149,
       "risk": 0.131441462835431,
       "accuracy": 0.868558537164569,
-      "confidence_cutoff": 0.5676556649286142
+      "confidence_cutoff": 0.5676556649225155
     },
     {
       "target_coverage": 0.75,
@@ -312,7 +312,7 @@
       "coverage": 0.949966755319149,
       "risk": 0.19720034995625546,
       "accuracy": 0.8027996500437445,
-      "confidence_cutoff": 0.2953923760282512
+      "confidence_cutoff": 0.2953923760266613
     },
     {
       "target_coverage": 1.0,
