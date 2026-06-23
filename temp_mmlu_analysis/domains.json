@@ -1,0 +1,127 @@
+[
+  {
+    "domain": "finance",
+    "categories": [
+      "business",
+      "economics"
+    ],
+    "n": 1633,
+    "direct": {
+      "n": 1633,
+      "accuracy": 0.7764849969381507,
+      "macro_category_accuracy": 0.7764995885366923,
+      "nll": 0.9395656998195344,
+      "brier": 0.38186045939213487,
+      "ece15": 0.10786245146341016,
+      "adaptive_ece15": 0.10068448631801426,
+      "aurc": 0.1305164120536268,
+      "error_detection_auroc": 0.7068093427250335,
+      "mean_confidence": 0.6758005106201365
+    },
+    "cot": {
+      "n": 1633,
+      "accuracy": 0.8340477648499693,
+      "macro_category_accuracy": 0.8335082803236444,
+      "nll": 0.7282851423122169,
+      "brier": 0.27978388231379375,
+      "ece15": 0.062024655197532925,
+      "adaptive_ece15": 0.05943013958174345,
+      "aurc": 0.08762256980656007,
+      "error_detection_auroc": 0.7340626710231861,
+      "mean_confidence": 0.7746176252682259
+    }
+  },
+  {
+    "domain": "medicine",
+    "categories": [
+      "health"
+    ],
+    "n": 818,
+    "direct": {
+      "n": 818,
+      "accuracy": 0.684596577017115,
+      "macro_category_accuracy": 0.684596577017115,
+      "nll": 1.1489741320509501,
+      "brier": 0.47633128585841555,
+      "ece15": 0.0337850588262655,
+      "adaptive_ece15": 0.05870248359948392,
+      "aurc": 0.20113182400347557,
+      "error_detection_auroc": 0.7086551771871539,
+      "mean_confidence": 0.6757636989660628
+    },
+    "cot": {
+      "n": 818,
+      "accuracy": 0.7665036674816625,
+      "macro_category_accuracy": 0.7665036674816625,
+      "nll": 0.9895054911129656,
+      "brier": 0.3929465930897772,
+      "ece15": 0.03259716985716275,
+      "adaptive_ece15": 0.051426119337630416,
+      "aurc": 0.1489821372568581,
+      "error_detection_auroc": 0.699779553596032,
+      "mean_confidence": 0.7603494822061839
+    }
+  },
+  {
+    "domain": "law",
+    "categories": [
+      "law"
+    ],
+    "n": 1101,
+    "direct": {
+      "n": 1101,
+      "accuracy": 0.5077202543142597,
+      "macro_category_accuracy": 0.5077202543142597,
+      "nll": 1.731945140191343,
+      "brier": 0.7176702676369356,
+      "ece15": 0.1509392770780326,
+      "adaptive_ece15": 0.13945161510327303,
+      "aurc": 0.4069330570696316,
+      "error_detection_auroc": 0.6052716698902231,
+      "mean_confidence": 0.5965429748404021
+    },
+    "cot": {
+      "n": 1101,
+      "accuracy": 0.6403269754768393,
+      "macro_category_accuracy": 0.6403269754768393,
+      "nll": 1.3878884002530623,
+      "brier": 0.5695088411201813,
+      "ece15": 0.07695230244098084,
+      "adaptive_ece15": 0.08751397754561403,
+      "aurc": 0.28789650106338477,
+      "error_detection_auroc": 0.6091912028082243,
+      "mean_confidence": 0.6923057672184695
+    }
+  },
+  {
+    "domain": "engineering",
+    "categories": [
+      "engineering"
+    ],
+    "n": 969,
+    "direct": {
+      "n": 969,
+      "accuracy": 0.5706914344685242,
+      "macro_category_accuracy": 0.5706914344685242,
+      "nll": 1.5847612513546523,
+      "brier": 0.634556379513106,
+      "ece15": 0.03998464104394707,
+      "adaptive_ece15": 0.060193006549436386,
+      "aurc": 0.27942304076157004,
+      "error_detection_auroc": 0.6975348622896091,
+      "mean_confidence": 0.5330808797858386
+    },
+    "cot": {
+      "n": 969,
+      "accuracy": 0.6212590299277606,
+      "macro_category_accuracy": 0.6212590299277606,
+      "nll": 1.4384874868393,
+      "brier": 0.5581814224686549,
+      "ece15": 0.02184239909493401,
+      "adaptive_ece15": 0.04199980151818093,
+      "aurc": 0.214170178198569,
+      "error_detection_auroc": 0.744163415318602,
+      "mean_confidence": 0.6336995054421571
+    }
+  }
+]

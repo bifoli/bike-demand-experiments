@@ -1,0 +1,84 @@
+{
+  "direct": [
+    {
+      "method": "raw",
+      "n": 12032,
+      "accuracy": 0.7024601063829787,
+      "macro_category_accuracy": 0.7025871924928163,
+      "nll": 1.1762552721392143,
+      "brier": 0.47585237612429143,
+      "ece15": 0.04238810635206285,
+      "adaptive_ece15": 0.059288657515268524,
+      "aurc": 0.1919929444715395,
+      "error_detection_auroc": 0.6950090322742692,
+      "mean_confidence": 0.69020503857972
+    },
+    {
+      "method": "global_temperature",
+      "n": 12032,
+      "accuracy": 0.7024601063829787,
+      "macro_category_accuracy": 0.7025871924928163,
+      "nll": 1.1587810369970282,
+      "brier": 0.47683528914990286,
+      "ece15": 0.08355256818181157,
+      "adaptive_ece15": 0.07216664511829322,
+      "aurc": 0.19132301062194262,
+      "error_detection_auroc": 0.6951784741702733,
+      "mean_confidence": 0.6325624509008522
+    },
+    {
+      "method": "category_temperature",
+      "n": 12032,
+      "accuracy": 0.7024601063829787,
+      "macro_category_accuracy": 0.7025871924928163,
+      "nll": 1.1421354757216968,
+      "brier": 0.47088364622541634,
+      "ece15": 0.07005253243779878,
+      "adaptive_ece15": 0.0717223124656573,
+      "aurc": 0.16538369466904917,
+      "error_detection_auroc": 0.7290963495467008,
+      "mean_confidence": 0.6340765153890371
+    }
+  ],
+  "cot": [
+    {
+      "method": "raw",
+      "n": 12032,
+      "accuracy": 0.7777593085106383,
+      "macro_category_accuracy": 0.7819525925483272,
+      "nll": 0.9143488611892843,
+      "brier": 0.35895357250814924,
+      "ece15": 0.02874447110638036,
+      "adaptive_ece15": 0.03613786962351763,
+      "aurc": 0.1326679962241286,
+      "error_detection_auroc": 0.7269974310334548,
+      "mean_confidence": 0.7558019992108768
+    },
+    {
+      "method": "global_temperature",
+      "n": 12032,
+      "accuracy": 0.7777593085106383,
+      "macro_category_accuracy": 0.7819525925483272,
+      "nll": 0.9123160334749489,
+      "brier": 0.36017700616807835,
+      "ece15": 0.048637141427410636,
+      "adaptive_ece15": 0.04677432923916653,
+      "aurc": 0.13200790972973991,
+      "error_detection_auroc": 0.7255696812393828,
+      "mean_confidence": 0.735607863775068
+    },
+    {
+      "method": "category_temperature",
+      "n": 12032,
+      "accuracy": 0.7777593085106383,
+      "macro_category_accuracy": 0.7819525925483272,
+      "nll": 0.9006754497531033,
+      "brier": 0.35780078516907504,
+      "ece15": 0.04479813217847281,
+      "adaptive_ece15": 0.045559244046617244,
+      "aurc": 0.11302669895422703,
+      "error_detection_auroc": 0.7575794583702257,
+      "mean_confidence": 0.7363473995003641
+    }
+  ]
+}
