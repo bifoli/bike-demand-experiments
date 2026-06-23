@@ -1,0 +1,251 @@
+name: temp-mmlu-corrected-analysis
+on:
+  push:
+    branches: [temp-mmlu-pro-unpack-20260622]
+permissions:
+  contents: write
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: temp-mmlu-pro-unpack-20260622
+      - run: python -m pip install -q numpy scipy scikit-learn
+      - name: Analyze with current Parquet truth
+        run: |
+          cat > /tmp/corrected.py <<'PY'
+          import io,json,math,os,re,hashlib,urllib.request,zipfile
+          import numpy as np
+          from scipy.optimize import minimize_scalar
+          from scipy.stats import binomtest
+          from sklearn.model_selection import StratifiedKFold
+          from sklearn.metrics import roc_auc_score
+
+          SEED=42; ALPHA=0.05; ANSWERS='ABCDEFGHIJ'
+          BASE='https://github.com/TIGER-AI-Lab/MMLU-Pro/raw/refs/heads/main/eval_results/'
+          ARCHIVES={
+            'direct_sonnet35':'model_outputs_sonnet-3.5_0shots_09_34_29.zip',
+            'direct_sonnet':'model_outputs_sonnet_0shots_12_01_18.zip',
+            'direct_flash':'model_outputs_flash_0shots_00_35_03.zip',
+            'cot_sonnet35':'model_outputs_claude-3.5-sonnet_5shots.zip',
+            'cot_sonnet35_20241022':'model_outputs_claude-3-5-sonnet-20241022_5shots.json.zip',
+            'cot_flash002':'model_outputs_gemini-1.5-flash-002_5shots.zip'}
+          CONDITIONS={'direct':['direct_sonnet35','direct_flash','direct_sonnet'],
+                      'cot':['cot_sonnet35_20241022','cot_sonnet35','cot_flash002']}
+          answer_fix=json.load(open('temp_mmlu_input/answer_corrections.json'))
+          k_fix={int(q):int(v) for q,v in json.load(open('temp_mmlu_input/option_count_corrections.json')).items()}
+          ans_pat=re.compile(r'(?:final\s+answer|answer\s+is)\s*[:=]?\s*\(?([A-J])\)?',re.I)
+
+          def load(fn):
+            req=urllib.request.Request(BASE+fn,headers={'User-Agent':'Mozilla/5.0'})
+            raw=urllib.request.urlopen(req,timeout=240).read(); rec=[]; members=[]
+            with zipfile.ZipFile(io.BytesIO(raw)) as z:
+              for member in z.namelist():
+                if member.endswith('/'): continue
+                b=z.read(member); members.append({'name':member,'bytes':len(b)})
+                if not member.lower().endswith(('.json','.jsonl')): continue
+                text=b.decode('utf-8',errors='replace')
+                try:
+                  x=json.loads(text)
+                  if isinstance(x,list): rec.extend(r for r in x if isinstance(r,dict))
+                  elif isinstance(x,dict): rec.extend(x.get('data',[x]) if isinstance(x.get('data',[x]),list) else [x])
+                except Exception:
+                  for line in text.splitlines():
+                    try:
+                      x=json.loads(line)
+                      if isinstance(x,dict): rec.append(x)
+                    except Exception: pass
+            return raw,members,rec
+
+          def pred(r):
+            for key in ('pred','prediction','predicted_answer'):
+              v=r.get(key)
+              if isinstance(v,str):
+                v=v.strip().upper().strip('()[]{}.:, ')
+                if len(v)==1 and v in ANSWERS: return ANSWERS.index(v)
+            for key in ('model_outputs','rationale','solution','output','response'):
+              v=r.get(key)
+              if isinstance(v,str):
+                m=list(ans_pat.finditer(v))
+                if m: return ANSWERS.index(m[-1].group(1).upper())
+            return -1
+
+          records={}; predmaps={}; runmeta={}
+          for name,fn in ARCHIVES.items():
+            raw,members,rec=load(fn); d={}
+            for r in rec:
+              try: d[int(r['question_id'])]=pred(r)
+              except Exception: pass
+            records[name]=rec; predmaps[name]=d
+            runmeta[name]={'filename':fn,'zip_bytes':len(raw),'zip_sha256':hashlib.sha256(raw).hexdigest(),
+                           'members':members,'records':len(rec),'unique_qids':len(d),
+                           'valid_predictions':sum(v>=0 for v in d.values())}
+
+          canonmap={int(r['question_id']):r for r in records['direct_sonnet35']}
+          qids=np.array(sorted(canonmap)); canon=[canonmap[int(q)] for q in qids]; n=len(qids)
+          cats=np.array([str(r['category']) for r in canon],dtype=object)
+          y=np.array([ANSWERS.index(answer_fix.get(str(int(q)),str(r['answer']).upper())) for q,r in zip(qids,canon)])
+          k=np.array([k_fix.get(int(q),len(r['options'])) for q,r in zip(qids,canon)],dtype=int)
+          catnames=sorted(set(cats.tolist()))
+          qidhash=hashlib.sha256(','.join(map(str,qids.tolist())).encode()).hexdigest()
+          labelrows='\n'.join(f'{int(q)}\t{ANSWERS[int(a)]}\t{c}' for q,a,c in zip(qids,y,cats))
+          labelhash=hashlib.sha256(labelrows.encode()).hexdigest()
+          assert qidhash=='bd5a57644fbae471078839de1a2511c5b23da70f0cd8116545638ccde489b499'
+          assert labelhash=='334ed3ccc6c9d2c273b373847e7aa08e6149992259251b59213f9fe6554acd0f'
+
+          modelpred={}
+          for name,d in predmaps.items():
+            a=np.array([d.get(int(q),-1) for q in qids]); a[(a<0)|(a>=k)]=-1; modelpred[name]=a
+            v=a>=0
+            runmeta[name].update(aligned_valid=int(v.sum()),coverage=float(v.mean()),
+              full_set_accuracy=float(np.mean(a==y)),
+              answered_accuracy=float(np.mean(a[v]==y[v])) if v.any() else None)
+
+          def ensemble(names):
+            votes=np.stack([modelpred[m] for m in names],axis=1); P=np.zeros((n,10)); yh=np.zeros(n,dtype=int)
+            for i,row in enumerate(votes):
+              vv=row[(row>=0)&(row<k[i])]; cnt=np.bincount(vv,minlength=k[i]).astype(float)
+              P[i,:k[i]]=(cnt+ALPHA)/(len(vv)+ALPHA*k[i]) if len(vv) else 1/k[i]
+              mx=P[i,:k[i]].max(); tied=set(np.flatnonzero(np.isclose(P[i,:k[i]],mx)).tolist())
+              yh[i]=next((int(modelpred[m][i]) for m in names if int(modelpred[m][i]) in tied),min(tied))
+            return P,yh,votes
+
+          def temp(P,T):
+            mask=P>0; X=np.full_like(P,-1e30); X[mask]=np.log(P[mask])/T; X-=X.max(1,keepdims=True)
+            E=np.exp(X); E[~mask]=0; return E/E.sum(1,keepdims=True)
+          def fitT(P,idx):
+            idx=np.asarray(idx)
+            def loss(logT):
+              Q=temp(P[idx],math.exp(logT)); return float(-np.log(np.clip(Q[np.arange(len(idx)),y[idx]],1e-15,1)).mean())
+            return float(math.exp(minimize_scalar(loss,bounds=(math.log(.05),math.log(20)),method='bounded').x))
+          def crossfit(P):
+            G=np.zeros_like(P); C=np.zeros_like(P); Ts=[]; cTs={c:[] for c in catnames}
+            sk=StratifiedKFold(5,shuffle=True,random_state=SEED)
+            for tr,te in sk.split(np.zeros(n),cats):
+              T=fitT(P,tr); Ts.append(T); G[te]=temp(P[te],T)
+              for c in catnames:
+                trc=tr[cats[tr]==c]; tec=te[cats[te]==c]; Tc=fitT(P,trc); cTs[c].append(Tc); C[tec]=temp(P[tec],Tc)
+            return G,C,Ts,cTs
+          def ece(P,yh,idx,bins=15,adaptive=False):
+            idx=np.asarray(idx); conf=P[idx,yh[idx]]; cor=(yh[idx]==y[idx]).astype(float)
+            vals=[]
+            if adaptive:
+              groups=np.array_split(np.argsort(conf,kind='mergesort'),bins)
+              for g in groups:
+                if len(g): vals.append((len(g)/len(idx))*abs(conf[g].mean()-cor[g].mean()))
+            else:
+              edges=np.linspace(0,1,bins+1)
+              for b in range(bins):
+                m=(conf>=edges[b]) & ((conf<edges[b+1]) if b<bins-1 else (conf<=edges[b+1]))
+                if m.any(): vals.append(m.mean()*abs(conf[m].mean()-cor[m].mean()))
+            return float(sum(vals))
+          def aurc(P,yh,idx):
+            idx=np.asarray(idx); conf=P[idx,yh[idx]]; err=(yh[idx]!=y[idx]).astype(float); o=np.argsort(-conf,kind='mergesort')
+            return float(np.mean(np.cumsum(err[o])/np.arange(1,len(o)+1)))
+          def metric(P,yh,idx=None):
+            idx=np.arange(n) if idx is None else np.asarray(idx); conf=P[idx,yh[idx]]; cor=yh[idx]==y[idx]; err=~cor
+            O=np.zeros((len(idx),10)); O[np.arange(len(idx)),y[idx]]=1
+            au=roc_auc_score(err.astype(int),1-conf) if err.any() and cor.any() else None
+            return {'n':int(len(idx)),'accuracy':float(cor.mean()),
+              'nll':float(-np.log(np.clip(P[idx,y[idx]],1e-15,1)).mean()),
+              'brier':float(np.sum((P[idx]-O)**2,axis=1).mean()),'ece15':ece(P,yh,idx),
+              'adaptive_ece15':ece(P,yh,idx,15,True),'aurc':aurc(P,yh,idx),
+              'error_detection_auroc':None if au is None else float(au),'mean_confidence':float(conf.mean())}
+          def reliab(P,yh,idx=None,bins=10):
+            idx=np.arange(n) if idx is None else np.asarray(idx); conf=P[idx,yh[idx]]; cor=(yh[idx]==y[idx]).astype(float); out=[]
+            edges=np.linspace(0,1,bins+1)
+            for b in range(bins):
+              m=(conf>=edges[b]) & ((conf<edges[b+1]) if b<bins-1 else conf<=edges[b+1])
+              out.append({'lower':float(edges[b]),'upper':float(edges[b+1]),'count':int(m.sum()),
+                'mean_confidence':float(conf[m].mean()) if m.any() else None,
+                'accuracy':float(cor[m].mean()) if m.any() else None})
+            return out
+          def select(P,yh,covs):
+            conf=P[np.arange(n),yh]; order=np.argsort(-conf,kind='mergesort'); out=[]
+            for cov in covs:
+              m=max(1,round(cov*n)); ix=order[:m]
+              out.append({'target_coverage':float(cov),'n_answered':int(m),'coverage':float(m/n),
+                'accuracy':float(np.mean(yh[ix]==y[ix])),'risk':float(np.mean(yh[ix]!=y[ix])),
+                'confidence_cutoff':float(conf[ix].min())})
+            return out
+          def tiers(P,yh):
+            conf=P[np.arange(n),yh]; groups=[('low',conf>=.8),('moderate',(conf>=.6)&(conf<.8)),('high',conf<.6)]
+            return [{'tier':z,'n':int(m.sum()),'share':float(m.mean()),'mean_confidence':float(conf[m].mean()) if m.any() else None,
+              'accuracy':float(np.mean(yh[m]==y[m])) if m.any() else None,'risk':float(np.mean(yh[m]!=y[m])) if m.any() else None} for z,m in groups]
+
+          cond={}
+          for z,names in CONDITIONS.items():
+            P,yh,v=ensemble(names); G,C,Ts,cTs=crossfit(P); cond[z]={'raw':P,'global':G,'category':C,'yh':yh,'votes':v,'Ts':Ts,'cTs':cTs}
+          overall={z:{'raw':metric(c['raw'],c['yh']),'global_temperature':metric(c['global'],c['yh']),
+                       'category_temperature':metric(c['category'],c['yh']),'fold_temperatures':c['Ts'],
+                       'mean_temperature':float(np.mean(c['Ts']))} for z,c in cond.items()}
+          selective={z:select(c['global'],c['yh'],[1,.95,.9,.8,.7,.5]) for z,c in cond.items()}
+          riskcurves={z:select(c['global'],c['yh'],np.linspace(.05,1,20)) for z,c in cond.items()}
+          risktiers={z:tiers(c['global'],c['yh']) for z,c in cond.items()}
+
+          category=[]
+          for ca in catnames:
+            idx=np.flatnonzero(cats==ca); row={'category':ca,'n':int(len(idx))}
+            for z,c in cond.items(): row[z]=metric(c['global'],c['yh'],idx)
+            row['accuracy_delta_cot_minus_direct']=row['cot']['accuracy']-row['direct']['accuracy']; category.append(row)
+          dmap={'finance':['business','economics'],'medicine':['health'],'law':['law'],'engineering':['engineering']}
+          domains=[]; reliability={'overall':{},'domains':{}}
+          for z,c in cond.items(): reliability['overall'][z]=reliab(c['global'],c['yh'])
+          for d,cl in dmap.items():
+            idx=np.flatnonzero(np.isin(cats,cl)); row={'domain':d,'categories':cl,'n':int(len(idx))}; reliability['domains'][d]={}
+            for z,c in cond.items(): row[z]=metric(c['global'],c['yh'],idx); reliability['domains'][d][z]=reliab(c['global'],c['yh'],idx)
+            domains.append(row)
+
+          failure={}
+          for z,c in cond.items():
+            labels=['unanimous_correct','unanimous_wrong','majority_correct','majority_wrong','three_way_correct','three_way_wrong','incomplete']; ct={a:0 for a in labels}
+            for i,row in enumerate(c['votes']):
+              vv=row[(row>=0)&(row<k[i])]; ok=c['yh'][i]==y[i]
+              if len(vv)<3: lab='incomplete'
+              else:
+                mx=np.unique(vv,return_counts=True)[1].max()
+                lab=('unanimous_' if mx==3 else 'majority_' if mx==2 else 'three_way_')+('correct' if ok else 'wrong')
+              ct[lab]+=1
+            failure[z]=[{'mode':a,'n':ct[a],'share':ct[a]/n} for a in labels]
+          dc=cond['direct']['yh']==y; cc=cond['cot']['yh']==y
+          transitions=[{'transition':'both_correct','n':int(np.sum(dc&cc)),'share':float(np.mean(dc&cc))},
+            {'transition':'direct_only','n':int(np.sum(dc&~cc)),'share':float(np.mean(dc&~cc))},
+            {'transition':'cot_only','n':int(np.sum(~dc&cc)),'share':float(np.mean(~dc&cc))},
+            {'transition':'both_wrong','n':int(np.sum(~dc&~cc)),'share':float(np.mean(~dc&~cc))}]
+          b=int(np.sum(dc&~cc)); c=int(np.sum(~dc&cc)); p=float(binomtest(min(b,c),b+c,.5).pvalue)
+          rng=np.random.default_rng(SEED); groups=[np.flatnonzero(cats==ca) for ca in catnames]; boot={x:[] for x in ('accuracy','ece','brier','nll')}
+          Pd=cond['direct']['global']; Pc=cond['cot']['global']; yd=cond['direct']['yh']; yc=cond['cot']['yh']
+          for _ in range(2000):
+            ix=np.concatenate([rng.choice(g,len(g),replace=True) for g in groups]); Od=np.zeros((len(ix),10)); Od[np.arange(len(ix)),y[ix]]=1
+            boot['accuracy'].append(float(np.mean(yc[ix]==y[ix])-np.mean(yd[ix]==y[ix])))
+            boot['ece'].append(float(ece(Pc,yc,ix)-ece(Pd,yd,ix)))
+            boot['brier'].append(float(np.sum((Pc[ix]-Od)**2,1).mean()-np.sum((Pd[ix]-Od)**2,1).mean()))
+            boot['nll'].append(float(-np.log(np.clip(Pc[ix,y[ix]],1e-15,1)).mean()+np.log(np.clip(Pd[ix,y[ix]],1e-15,1)).mean()))
+          significance={'mcnemar':{'direct_correct_cot_wrong':b,'direct_wrong_cot_correct':c,'exact_p':p},'bootstrap':{}}
+          for key,v in boot.items():
+            a=np.asarray(v); significance['bootstrap'][key+'_delta_cot_minus_direct']={'point':float(np.mean(a)),
+              'ci95':[float(np.quantile(a,.025)),float(np.quantile(a,.975))],'probability_gt_zero':float(np.mean(a>0))}
+
+          dataset={'n':n,'qid_min':int(qids.min()),'qid_max':int(qids.max()),'qid_sha256':qidhash,'label_sha256':labelhash,
+            'category_counts':{ca:int(np.sum(cats==ca)) for ca in catnames},
+            'answer_counts':{ANSWERS[i]:int(np.sum(y==i)) for i in range(10)},
+            'option_count_distribution':{str(v):int(np.sum(k==v)) for v in sorted(set(k.tolist()))},
+            'answer_key_corrections_applied':len(answer_fix),'option_count_corrections_applied':len(k_fix)}
+          core={'seed':SEED,'dirichlet_alpha_per_option':ALPHA,'conditions':CONDITIONS,'dataset':dataset,
+            'model_runs':runmeta,'overall':overall,'selective':selective,'risk_tiers':risktiers,
+            'transitions':transitions,'significance':significance}
+          out='temp_mmlu_corrected'; os.makedirs(out,exist_ok=True)
+          objs={'core.json':core,'category.json':category,'domains.json':domains,'reliability.json':reliability,
+                'risk_curves.json':riskcurves,'failure.json':failure}
+          for fn,obj in objs.items(): json.dump(obj,open(out+'/'+fn,'w'),indent=2)
+          print(json.dumps({'dataset':dataset,'overall':overall,'transitions':transitions,'significance':significance},indent=2))
+          PY
+          python /tmp/corrected.py
+      - name: Commit corrected results
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add temp_mmlu_corrected
+          git commit -m 'Add corrected MMLU-Pro uncertainty results [skip ci]' || exit 0
+          git push origin temp-mmlu-pro-unpack-20260622
