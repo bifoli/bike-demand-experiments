@@ -102,6 +102,7 @@
   "qid_min": 70,
   "qid_max": 12256,
   "qid_count": 12032,
+  "qid_sha256": "bd5a57644fbae471078839de1a2511c5b23da70f0cd8116545638ccde489b499",
   "missing_by_model": {
     "direct_sonnet35": 0,
     "direct_sonnet": 401,
